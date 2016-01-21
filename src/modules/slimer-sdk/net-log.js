@@ -616,6 +616,8 @@ const traceResponse = function(id, request) {
             statusText: null,
             // Extensions
             referrer: "",
+            remoteAddress: "",
+            localAddress: "",
             body: "",
             httpVersion: {
                 major: 1,
@@ -667,6 +669,8 @@ const traceResponse = function(id, request) {
 
     // Extensions
     response.referrer = request.referrer != null && request.referrer.spec || "";
+    response.remoteAddress = request.remoteAddress + ':' + request.remotePort;
+    response.localAddress = request.localAddress + ':' + request.localPort;
     return response;
 };
 
