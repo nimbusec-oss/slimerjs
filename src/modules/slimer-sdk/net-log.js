@@ -562,7 +562,9 @@ const traceRequest = function(id, request) {
         method: request.requestMethod,
         url: request.URI.spec,
         time: new Date(),
-        headers: headers
+        headers: headers,
+        // Extensions
+        referrer: ""
     };
 
     let stream = request.QueryInterface(Ci.nsIUploadChannel).uploadStream;
@@ -592,6 +594,9 @@ const traceRequest = function(id, request) {
            // let's consider that there are no post data
         }
     }
+
+    // Extensions
+    res.referrer = request.referrer != null && request.referrer.spec || "";
     return res;
 };
 
