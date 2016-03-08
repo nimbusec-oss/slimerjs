@@ -30,6 +30,7 @@ Improvements
 - Exit code is now supported with ``slimer.exit()`` and ``phantom.exit()`` (except with slimerjs.bat)
 - ``require`` supports node modules (it searches into node_modules directories)
 - ``webpage.onConsoleMessage`` can receive additionnal parameters : level, function name and timestamp
+- Improved error handling that may appear in webpage listeners
 
 Fixed bugs
 ----------
@@ -37,6 +38,8 @@ Fixed bugs
 - Fixed configuration reading for script handlers (internal stuff)
 - Callback given to ``webpage.open()`` is now really called after the page loading:
   it allows to call ``render()`` without a delay (``setTimeout``...)
+- Fix error NS_ERROR_FACTORY_NOT_REGISTERED on navigator object (issue #373)
+- Fix webpage.render() on SVG document (issue #283)
 
 Fixed PhantomJS conformance issues
 ----------------------------------
@@ -47,7 +50,9 @@ Other informations about this release
 -------------------------------------
 
 - Compatibility is no more guaranteed on Firefox having version lower than 38.
-- XulRunner 40 is bundled into packages
+- There are no anymore packages including XulRunner, the Firefox runtime, since
+  Mozilla has killed the XulRunner project. So you need to install Firefox
+  in order to run SlimerJS.
 
 
 Missing features in SlimerJS 0.10
