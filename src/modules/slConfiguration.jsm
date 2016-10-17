@@ -8,13 +8,25 @@ var EXPORTED_SYMBOLS = ["slConfiguration"];
 const Cu = Components.utils;
 const Cc = Components.classes;
 const Ci = Components.interfaces;
+const { require } = Cu.import("resource://gre/modules/commonjs/toolkit/require.js", {});
 
 Cu.import('resource://slimerjs/slErrorLogger.jsm');
 Cu.import('resource://slimerjs/slUtils.jsm');
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import('resource://slimerjs/slDebug.jsm');
-// to avoid issue on navigator object, see https://github.com/laurentj/slimerjs/issues/373
-Cu.import("resource://gre/modules/Webapps.jsm"); 
+
+try {
+    // Importing Webapps module to avoid issue on navigator object.
+    // See: https://github.com/laurentj/slimerjs/issues/373
+
+    Cu.import('resource://gre/modules/Webapps.jsm');
+} catch (e) {
+    // At this moment the "--debug" option has not been parsed yet so the error will be silently suppressed to allow
+    // running SlimerJS under control of Light: https://sourceforge.net/projects/lightfirefox/
+}
+
+var httphandler =  Cc["@mozilla.org/network/protocol;1?name=http"]
+                    .getService(Ci.nsIHttpProtocolHandler);
 
 var defaultUA =  Cc["@mozilla.org/network/protocol;1?name=http"]
                       .getService(Ci.nsIHttpProtocolHandler)
@@ -25,6 +37,7 @@ var availableProxyType = { 'auto':true, 'system':true, 'http':true, 'socks5':tru
 
 var optionsSpec = {
     // name: [ 'cmdline option name', 'parser function name', 'default value',  supported],
+    allowMedia: ['allow-media', 'bool', true, true],
     errorLogFile: ['error-log-file', 'file', '', true],
     cookiesFile : ['cookies-file', 'file', '', false],
     diskCacheEnabled : ['disk-cache', 'bool', true, true],
@@ -32,7 +45,7 @@ var optionsSpec = {
     ignoreSslErrors : ['ignore-ssl-errors', 'bool', false, false],
     loadImages: ['load-images', 'bool', true, true],
     localToRemoteUrlAccessEnabled : ['local-to-remote-url-access', 'bool', false, false],
-    outputEncoding : ['output-encoding', 'encoding', 'UTF-8', false],
+    outputEncoding : ['output-encoding', 'encoding', 'UTF-8', true],
     proxyType : ['proxy-type', 'proxytype', 'http', true],
     proxy : ['proxy', 'proxy', null, true],
     proxyHost : ['', '', null, false],
@@ -40,7 +53,6 @@ var optionsSpec = {
     proxyAuth : ['proxy-auth', 'proxyauth', null, true],
     proxyAuthUser : ['', '', '', false],
     proxyAuthPassword : ['', '', '', false],
-    scriptEncoding : ['script-encoding', 'encoding', 'UTF-8', false],
     webSecurityEnabled : ['web-security', 'bool', true, false],
     offlineStoragePath : ['local-storage-path', 'file', '', false],
     offlineStorageDefaultQuota : ['local-storage-quota', 'int', -1, true],
@@ -160,6 +172,17 @@ var slConfiguration = {
             }
             else
                 this[opt] = defaultValue;
+        }
+
+        let jsConsole = cmdline.handleFlag("jsconsole", false);
+        if (jsConsole) {
+            var appInfo = require("resource://slimerjs/addon-sdk/sdk/system/xul-app");
+            if (appInfo.satisfiesVersion(appInfo.platformVersion, '>=50.0')) {
+                dump(
+                    'Warning: jsconsole parameter does not work when using Firefox 50+ because the Error Console has ' +
+                    'been removed from the Firefox toolkit package so it is no longer available for XUL apps.' + "\n"
+                );
+            }
         }
 
         let configFile = cmdline.handleFlagWithParam("config", false);
@@ -388,8 +411,8 @@ var slConfiguration = {
     },
 
     getDefaultWebpageConfig : function() {
-        
         return Object.freeze({
+            allowMedia: this.allowMedia,
             javascriptEnabled: true,
             loadImages: this.loadImages,
             localToRemoteUrlAccessEnabled: this.localToRemoteUrlAccessEnabled,
@@ -435,6 +458,7 @@ var slConfiguration = {
             slDebugLog('Configuration: workingDirectory=unknown??');
     },
 
+    allowMedia: true,
     errorLogFile : '',
     cookiesFile : '',
     diskCacheEnabled : true,
@@ -462,5 +486,6 @@ var slConfiguration = {
     sslProtocol: -1,
     userAgent: defaultUA,
     viewportWidth: 400,
-    viewportHeight: 300
+    viewportHeight: 300,
+    isWindows: /windows/i.test(httphandler.oscpu)
 }

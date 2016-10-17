@@ -18,62 +18,159 @@ methods. See below.
 Note: almost properties and methods are implemented, but some are not documented yet.
 Please help us to document them ;-). You can also read the PhantomJS documentation.
 
+Index of properties and methods
+--------------------------------
 
-Webpage object
-==============
+Navigation:
 
-Properties list:
+:ref:`canGoBack <webpage-canGoBack>`,
+:ref:`canGoForward <webpage-canGoForward>`,
+:ref:`navigationLocked <webpage-navigationLocked>`
 
-:ref:`clipRect <webpage-clipRect>` :ref:`canGoBack <webpage-canGoBack>` :ref:`canGoForward <webpage-canGoForward>`
-:ref:`captureContent <webpage-captureContent>`
-:ref:`content <webpage-content>` :ref:`cookies <webpage-cookies>` :ref:`customHeaders <webpage-customHeaders>`
-:ref:`event <webpage-event>` :ref:`focusedFrameName <webpage-focusedFrameName>` :ref:`frameContent <webpage-frameContent>`
-:ref:`frameName <webpage-frameName>` :ref:`framePlainText <webpage-framePlainText>` :ref:`frameTitle <webpage-frameTitle>`
-:ref:`frameUrl <webpage-frameUrl>` :ref:`framesCount <webpage-framesCount>` :ref:`framesName <webpage-framesName>`
-:ref:`libraryPath <webpage-libraryPath>` :ref:`navigationLocked <webpage-navigationLocked>`
-:ref:`offlineStoragePath <webpage-offlineStoragePath>` :ref:`offlineStorageQuota <webpage-offlineStorageQuota>`
-:ref:`ownsPages <webpage-ownsPages>` :ref:`pages <webpage-pages>` :ref:`pagesWindowName <webpage-pagesWindowName>`
-:ref:`paperSize <webpage-paperSize>` :ref:`plainText <webpage-plainText>` :ref:`scrollPosition <webpage-scrollPosition>`
-:ref:`settings <webpage-settings>` :ref:`title <webpage-title>` :ref:`url <webpage-url>`
-:ref:`viewportSize <webpage-viewportSize>` :ref:`windowName <webpage-windowName>` :ref:`zoomFactor <webpage-zoomFactor>`
+:ref:`go() <webpage-go>` ,
+:ref:`goBack() <webpage-goBack>`,
+:ref:`goForward() <webpage-goForward>`
 
-Functions list:
+:ref:`onNavigationRequested <webpage-onNavigationRequested>`
 
-:ref:`addCookie() <webpage-addCookie>` :ref:`childFramesCount() <webpage-childFramesCount>` :ref:`childFramesName() <webpage-childFramesName>` 
-:ref:`clearCookies() <webpage-clearCookies>` :ref:`close() <webpage-close>` :ref:`currentFrameName() <webpage-currentFrameName>` 
-:ref:`deleteCookie() <webpage-deleteCookie>` :ref:`evaluateJavaScript() <webpage-evaluateJavaScript>` :ref:`evaluate() <webpage-evaluate>` 
-:ref:`evaluateAsync() <webpage-evaluateAsync>` :ref:`getPage() <webpage-getPage>` :ref:`go() <webpage-go>` 
-:ref:`goBack() <webpage-goBack>` :ref:`goForward() <webpage-goForward>` :ref:`includeJs() <webpage-includeJs>` 
-:ref:`injectJs() <webpage-injectJs>` :ref:`stopJavaScript() <webpage-stopJavaScript>` :ref:`open() <webpage-open>` :ref:`openUrl() <webpage-openUrl>` 
-:ref:`release() <webpage-release>` :ref:`reload() <webpage-reload>` :ref:`render() <webpage-render>` 
-:ref:`renderBase64() <webpage-renderBase64>` :ref:`sendEvent() <webpage-sendEvent>` 
-:ref:`setContent() <webpage-setContent>` :ref:`stop() <webpage-stop>` :ref:`switchToFocusedFrame() <webpage-switchToFocusedFrame>` 
-:ref:`switchToFrame() <webpage-switchToFrame>` :ref:`switchToChildFrame() <webpage-switchToChildFrame>` 
-:ref:`switchToMainFrame() <webpage-switchToMainFrame>`
-:ref:`switchToParentFrame() <webpage-switchToParentFrame>` :ref:`uploadFile() <webpage-uploadFile>`
+Frames and windows management:
 
-Callbacks list:
+:ref:`focusedFrameName <webpage-focusedFrameName>`,
+:ref:`frameContent <webpage-frameContent>`,
+:ref:`frameName <webpage-frameName>`,
+:ref:`framePlainText <webpage-framePlainText>`,
+:ref:`frameTitle <webpage-frameTitle>`,
+:ref:`frameUrl <webpage-frameUrl>`,
+:ref:`framesCount <webpage-framesCount>`,
+:ref:`framesName <webpage-framesName>`,
+:ref:`ownsPages <webpage-ownsPages>`,
+:ref:`pages <webpage-pages>`,
+:ref:`pagesWindowName <webpage-pagesWindowName>`,
+:ref:`url <webpage-url>`,
+:ref:`windowName <webpage-windowName>`
 
-:ref:`onAlert <webpage-onAlert>` :ref:`onAuthPrompt <webpage-onAuthPrompt>`  :ref:`onCallback <webpage-onCallback>` :ref:`onClosing <webpage-onClosing>` 
-:ref:`onConfirm <webpage-onConfirm>` :ref:`onConsoleMessage <webpage-onConsoleMessage>` :ref:`onLongRunningScript <webpage-onLongRunningScript>` :ref:`onError <webpage-onError>` 
-:ref:`onFilePicker <webpage-onFilePicker>` :ref:`onInitialized <webpage-onInitialized>` :ref:`onLoadFinished <webpage-onLoadFinished>` 
-:ref:`onLoadStarted <webpage-onLoadStarted>` :ref:`onNavigationRequested <webpage-onNavigationRequested>` :ref:`onPageCreated <webpage-onPageCreated>` 
-:ref:`onPrompt <webpage-onPrompt>` :ref:`onResourceError <webpage-onResourceError>`
-:ref:`onResourceRequested <webpage-onResourceRequested>` :ref:`onResourceReceived <webpage-onResourceReceived>` 
-:ref:`onResourceTimeout <webpage-onResourceTimeout>`  :ref:`onUrlChanged <webpage-onUrlChanged>`
+:ref:`childFramesCount() <webpage-childFramesCount>`,
+:ref:`childFramesName() <webpage-childFramesName>`,
+:ref:`close() <webpage-close>`,
+:ref:`currentFrameName() <webpage-currentFrameName>`,
+:ref:`getPage() <webpage-getPage>`,
+:ref:`open() <webpage-open>`,
+:ref:`openUrl() <webpage-openUrl>`,
+:ref:`release() <webpage-release>`,
+:ref:`reload() <webpage-reload>`,
+:ref:`stop() <webpage-stop>`,
+:ref:`switchToFocusedFrame() <webpage-switchToFocusedFrame>`,
+:ref:`switchToFrame() <webpage-switchToFrame>`,
+:ref:`switchToChildFrame() <webpage-switchToChildFrame>`,
+:ref:`switchToMainFrame() <webpage-switchToMainFrame>`,
+:ref:`switchToParentFrame() <webpage-switchToParentFrame>`
+
+:ref:`onPageCreated <webpage-onPageCreated>`,
+:ref:`onClosing <webpage-onClosing>`,
+:ref:`onUrlChanged <webpage-onUrlChanged>`
+
+Offline storage:
+
+:ref:`offlineStoragePath <webpage-offlineStoragePath>`,
+:ref:`offlineStorageQuota <webpage-offlineStorageQuota>`
+
+Rendering:
+
+:ref:`clipRect <webpage-clipRect>`,
+:ref:`paperSize <webpage-paperSize>`,
+:ref:`viewportSize <webpage-viewportSize>`,
+:ref:`zoomFactor <webpage-zoomFactor>`
+
+:ref:`render() <webpage-render>`,
+:ref:`renderBase64() <webpage-renderBase64>`
+:ref:`renderBytes() <webpage-renderBytes>`
+
+
+Content management:
+
+:ref:`captureContent <webpage-captureContent>`,
+:ref:`content <webpage-content>`,
+:ref:`plainText <webpage-plainText>`,
+:ref:`scrollPosition <webpage-scrollPosition>`,
+:ref:`title <webpage-title>`
+
+
+:ref:`setContent() <webpage-setContent>`,
+:ref:`uploadFile() <webpage-uploadFile>`
+
+:ref:`onAlert <webpage-onAlert>`,
+:ref:`onAuthPrompt <webpage-onAuthPrompt>`,
+:ref:`onCallback <webpage-onCallback>`,
+:ref:`onConfirm <webpage-onConfirm>`,
+:ref:`onConsoleMessage <webpage-onConsoleMessage>`,
+:ref:`onFilePicker <webpage-onFilePicker>`,
+:ref:`onPrompt <webpage-onPrompt>`
+
+Javascript execution:
+
+:ref:`evaluateJavaScript() <webpage-evaluateJavaScript>`,
+:ref:`evaluate() <webpage-evaluate>`,
+:ref:`evaluateAsync() <webpage-evaluateAsync>`,
+:ref:`includeJs() <webpage-includeJs>`,
+:ref:`injectJs() <webpage-injectJs>`,
+:ref:`stopJavaScript() <webpage-stopJavaScript>`
+
+:ref:`onLongRunningScript <webpage-onLongRunningScript>`,
+:ref:`onError <webpage-onError>` 
+
+
+
+
+Cookies management:
+
+:ref:`cookies <webpage-cookies>`,
+:ref:`addCookie() <webpage-addCookie>`
+
+:ref:`clearCookies() <webpage-clearCookies>`,
+:ref:`deleteCookie() <webpage-deleteCookie>`
+
+Network management:
+
+:ref:`customHeaders <webpage-customHeaders>`
+
+:ref:`onInitialized <webpage-onInitialized>`,
+:ref:`onLoadFinished <webpage-onLoadFinished>`,
+:ref:`onLoadStarted <webpage-onLoadStarted>`
+
+:ref:`onResourceError <webpage-onResourceError>`,
+:ref:`onResourceRequested <webpage-onResourceRequested>`,
+:ref:`onResourceReceived <webpage-onResourceReceived>`,
+:ref:`onResourceTimeout <webpage-onResourceTimeout>`
+
+Page events:
+
+:ref:`event <webpage-event>`,
+:ref:`sendEvent() <webpage-sendEvent>`
+
+Others properties:
+
+:ref:`libraryPath <webpage-libraryPath>`
+
+:ref:`settings <webpage-settings>`
 
 Internal methods to trigger callbacks:
 
-:ref:`closing() <webpage-closing>` :ref:`initialized() <webpage-initialized>` 
-:ref:`javaScriptAlertSent() <webpage-javaScriptAlertSent>`
-:ref:`javaScriptConsoleMessageSent() <webpage-javaScriptConsoleMessageSent>`
-:ref:`loadFinished() <webpage-loadFinished>` :ref:`loadStarted() <webpage-loadStarted>`
-:ref:`navigationRequested() <webpage-navigationRequested>` :ref:`rawPageCreated() <webpage-rawPageCreated>`
-:ref:`resourceError() <webpage-resourceError>`
-:ref:`resourceReceived() <webpage-resourceReceived>` :ref:`resourceRequested() <webpage-resourceRequested>`
-:ref:`urlChanged() <webpage-urlChanged>` 
+:ref:`closing() <webpage-closing>`,
+:ref:`initialized() <webpage-initialized>`,
+:ref:`javaScriptAlertSent() <webpage-javaScriptAlertSent>`,
+:ref:`javaScriptConsoleMessageSent() <webpage-javaScriptConsoleMessageSent>`,
+:ref:`loadFinished() <webpage-loadFinished>`,
+:ref:`loadStarted() <webpage-loadStarted>`,
+:ref:`navigationRequested() <webpage-navigationRequested>`,
+:ref:`rawPageCreated() <webpage-rawPageCreated>`,
+:ref:`resourceError() <webpage-resourceError>`,
+:ref:`resourceReceived() <webpage-resourceReceived>`,
+:ref:`resourceRequested() <webpage-resourceRequested>`,
+:ref:`urlChanged() <webpage-urlChanged>`
 
 
+Properties
+===========
 
 .. _webpage-clipRect:
 
@@ -150,7 +247,7 @@ Probably you would prefer to use the ``addCookie()`` method to modify a cookie.
 
 If cookies are disabled, or if no page is loaded, modifying this property does nothing.
 
-Be careful about `the inconsistent behavior of the expiry property <cookies.html#expires>`_.
+Be careful about `the inconsistent behavior of the expiry property <cookie.html#expires>`_.
 
 .. _webpage-customHeaders:
 
@@ -159,7 +256,7 @@ customHeaders
 
 .. index:: customHeaders
 
-This property is an object defining additionnal HTTP headers that will be send
+This property is an object defining additional HTTP headers that will be send
 with each HTTP request, both for pages and resources.
 
 Example:
@@ -179,7 +276,7 @@ To define user agent, prefer to use ``webpage.settings.userAgent``
    username/password, cookies etc! It can be a security issue!
    Remember that all custom headers are sent with **every requests** made during
    the load of the web page.
-   And as you may know, a web page can load ressources from everywhere. If you set
+   And as you may know, a web page can load resources from everywhere. If you set
    http authentication username/password into headers, and if the web page loaded
    from the web site A, contains an iframe that loads a page from another web site B,
    this website will receive all custom headers, and then **the username and password**,
@@ -376,7 +473,7 @@ ownsPages was true.
 paperSize
 -----------------------------------------
 
-Contains an object specifiying some dimensions for the PDF rendering.
+Contains an object specifying some dimensions for the PDF rendering.
 If null, the PDF size will be the viewport size of the webpage.
 
 It can be either:
@@ -473,6 +570,7 @@ settings
 This property allows to set some options for the load of a page.
 Changing them after the load has no effect.
 
+- ``allowMedia``: ``false`` to deactivate the loading of media (audio / video). Default: ``true``. (SlimerJS only)
 - ``javascriptEnabled``: ``false`` to deactivate javascript in web pages (default is ``true``)
 - ``javascriptCanCloseWindows``  (not supported yet)
 - ``javascriptCanOpenWindows``  (not supported yet)
@@ -488,6 +586,9 @@ Changing them after the load has no effect.
 - ``webSecurityEnabled``  (not supported yet)
 - ``plainTextAllContent``: ``true`` to indicate that webpage.plainText returns everything, even
    content of ``script`` elements, invisible elements etc.. Default: ``false``. (SlimerJS only)
+- ``resourceTimeout``: the number of milliseconds that the browser should wait
+   after the loading of a resource. ``undefined`` (default value) means default
+   gecko parameters.
 
 .. code-block:: javascript
 
@@ -570,6 +671,11 @@ too early). After the call of ``zoomFactor``, You probably have to put the code 
 callback given to ``window.setTimeout()``, or you can call ``slimer.wait(500)`` (which is
 not compatible with PhantomJS).
 
+
+Methods
+========
+
+
 .. _webpage-addCookie:
 
 addCookie(cookie)
@@ -583,7 +689,7 @@ and the path of the current url.
 It returns true if the cookie has been really added. If cookies are
 disabled, or if no page is loaded, the cookie is not added into the cookie database.
 
-Be careful about `the inconsistent behavior of the expiry property <cookies.html#expires>`_.
+Be careful about `the inconsistent behavior of the expiry property <cookie.html#expires>`_.
 
 
 .. _webpage-childFramesCount:
@@ -679,7 +785,7 @@ to the loaded page, not to your script. In other terms, you cannot use closures.
         slimer.exit()
     });
 
-You can give additionnal parameters to ``evaluate()``. This will be the parameters
+You can give additional parameters to ``evaluate()``. This will be the parameters
 for the function. For example, here the function will receive "#aDiv" as parameter:
 
 .. code-block:: javascript
@@ -696,17 +802,16 @@ cannot call a ``toString()`` or you cannot serialize as a JSON value.
 
 .. _webpage-evaluateAsync:
 
-evaluateAsync(func)
------------------------------------------
+evaluateAsync(func, timeMs, arg1, arg2...)
+-------------------------------------------
 
 It is equivalent to ``evaluate()``, but with some differences:
 
 - the function is executed asynchronously. It means that the call of ``evaluateAsync()``
   does not wait after the execution of the given function to return. It does not
-  block your current script.
+  block your current script. The script can be executed after the given
+  number of milliseconds (timeMs).
 - you cannot return values inside the given function
-- you cannot pass parameters.
-
 
 .. _webpage-getPage:
 
@@ -799,7 +904,7 @@ Since this operation is asynchronous, you cannot do something on
 the page after the call of ``open()``. You should provide a callback
 or you should use the returned promise_ (not compatible with PhantomJS),
 to do something on the loaded page. The callback or the promise receives
-a string "success" if the loading has been succeded.
+a string "success" if the loading was successful.
 
 Example with a callback function:
 
@@ -928,7 +1033,7 @@ and the type of arguments.
 - ``httpConf.operation``: the http method. Allowed values: ``'get'`` or ``'post'`` (other methods are not supported in SlimerJS)
 - ``httpConf.data``: the body. Useful only for ``'post'`` method
 - ``httpConf.headers``: the headers to send. An object like :ref:`webpage.customHeaders <webpage-customHeaders>`, but it
-  doesn't replace ``webpage.customHeaders``. It allows you to specify additionnal headers
+  doesn't replace ``webpage.customHeaders``. It allows you to specify additional headers
   for this specific load.
 
 ``httpConf`` is optional and you can give ``null`` instead of an object.
@@ -997,8 +1102,10 @@ ignored. Some options for PDF should be set in the ``paperSize`` property.
 Note: On MacOSx, you probably have to install a "PDF driver" as a printer on your system.
 See for example `PDFWriter for mac <http://sourceforge.net/projects/pdfwriterformac/>`_.
 
-Note: On Linux, if it hangs during PDF rendering, try by unsetting the environment variable
-CUPS_SERVER before running Slimerjs.
+On Linux,:
+
+- Verify that Cups is installed and is running.
+- if it hangs during PDF rendering, try by unsetting the environment variable CUPS_SERVER before running Slimerjs. 
 
 .. _webpage-renderBase64:
 
@@ -1014,6 +1121,31 @@ You can limit the area to capture by setting the ``clipRect`` property.
 Instead of giving the format, you can give an object containing options (SlimerJS only).
 See the ``render()`` function.
 
+.. _webpage-renderBytes:
+
+renderBytes(options)
+-----------------------------------------
+
+This method takes a screenshot of the web page and returns it as a "binary string" containing the
+image data in the specified format. 
+
+The options object is the same as in ``render()``.
+
+Not in PhantomJS.
+
+Note: you can use the result to output on the standard output, by setting
+``phantom.outputEncoding`` to "binary".
+
+.. code-block:: javascript
+
+    phantom.outputEncoding = 'binary';
+    // ....
+    let bytes = page.renderBytes({format:'png'})
+    if (bytes) {
+        system.stdout.write(bytes);
+    }
+
+
 .. _webpage-sendEvent:
 
 sendEvent(eventType, arg1, arg2, button, modifier)
@@ -1024,7 +1156,7 @@ browser window, like a user does when he types on a keyboard or
 uses his mouse. Then the browser engine (Gecko) translates these events
 into DOM events into the web page.
 
-So this method does not synthetize directly DOM events. This is why
+So this method does not directly synthesize DOM events. This is why
 you cannot indicate a DOM element as target.
 
 With this method, you can generate keyboard events and mouse events.
@@ -1188,6 +1320,11 @@ indicate an array of path, if the input element accepts several files.
 Note that a virtual file picker is opened when calling ``uploadFile()``, and
 so the ``onFilePicker`` callback is called. If this callback exists and
 returns a filename, the filename given to ``uploadFile()`` is ignored.
+
+
+Callbacks
+==========
+
 
 .. _webpage-onAlert:
 
@@ -1418,7 +1555,7 @@ This callback is called when the loading of the page is finished (including its 
 like images etc). It is called also after each the loading of a frame is finished.
 
 It receives a string as argument. Its value is `"success"` if the loading is a success
-else it receives `"fail"` if a network error occured.
+else it receives `"fail"` if a network error occurred.
 
 The loading is considered as a success when a correct HTTP response is received, with a
 status code etc. It means that it receives `"success"` even in case of a 404 http error for
@@ -1432,7 +1569,7 @@ example.
         // Do other things here...
     };
 
-In SlimerJS, you can receive additionnal arguments (that you don't have in PhantomJS):
+In SlimerJS, you can receive additional arguments (that you don't have in PhantomJS):
 
 - the URL of the content that is loaded
 - a boolean indicating if it is a frame (true) or the main content (false)
@@ -1549,15 +1686,19 @@ In the web page:
 
 onResourceError
 -----------------------------------------
-This callback is invoked when the browser received a netword error about a resource.
+This callback is invoked when the browser received a network error about a resource.
 
-The unique parameter received by the callback is an object containing these
-informations:
+The unique parameter received by the callback is an object containing this
+information:
  
 - ``id``: the number of the requested resource
 - ``url``:  the url of the resource
 - ``errorCode``: an error code (see possible values below)
-- ``errorString`` the error message.
+- ``errorString``: the error message.
+- ``status``: the response status if there is a response
+- ``statusText``: the response status text if there is a response
+
+Note that ``id`` will be null if the error code is ``105``.
 
 List of supported error codes: (see `QNetworkReply codes in QT <http://qt-project.org/doc/qt-5.0/qtnetwork/qnetworkreply.html#NetworkError-enum>`_)
 
@@ -1574,6 +1715,7 @@ List of supported error codes: (see `QNetworkReply codes in QT <http://qt-projec
 - ``99``: an unknown network-related error was detected
 - ``101``: the connection to the proxy server was refused (the proxy server is not accepting requests)
 - ``103``: the proxy host name was not found (invalid proxy hostname)
+- ``105``: the proxy requires authentication in order to honour the request but did not accept any credentials offered (if any)
 - ``201``: the access to the remote content was denied (similar to HTTP error 401)
 - ``203``: the remote content was not found at the server (similar to HTTP error 404)
 - ``204``: the remote server requires authentication to serve the content but the
@@ -1590,8 +1732,8 @@ be called several times with multiple chunk of data, during the load of this res
 A resource can be the web page itself, or any other resources like
 images, frames, css files etc.
 
-The unique parameter received by the callback is an object containing these
-informations:
+The unique parameter received by the callback is an object containing this
+information:
  
 - ``id``: the number of the requested resource
 - ``url``:  the url of the resource
@@ -1635,7 +1777,7 @@ images, frames, css files etc.
 
 The callback may accept two parameters :
 
-- ``requestData``, a metadata object containing informations about the resource
+- ``requestData``, a metadata object containing information about the resource
 - ``networkRequest``, an object to manipulate the network request.
 
 .. code-block:: javascript
@@ -1671,7 +1813,18 @@ The ``networkRequest`` object has two methods:
 onResourceTimeout
 -----------------------------------------
 
-Not implemented yet.
+This callback is invoked when a resource takes too long time to load,
+when webpage.settings.resourceTimeout is set.
+
+The function receives an object containing these properties:
+
+- ``id``: the number of the requested resource
+- ``url``:  the url of the resource
+- ``time``: a Date object
+- ``headers``: the list of headers (list of objects ``{name:'', value:''}``)
+- ``method``: the http method ("get", "post"..)
+- ``errorCode``: an error code: 408
+- ``errorString`` the error message.
 
 
 .. _webpage-onUrlChanged:
@@ -1691,6 +1844,10 @@ Example:
     };
 
 To retrieve the old URL, use the onLoadStarted callback.
+
+
+Internal methods
+=================
 
 .. _webpage-closing:
 

@@ -8,7 +8,7 @@ Manual
 .. toctree::
    :maxdepth: 1
    
-   release-notes-0.10
+   release-notes-1.0
    installation
    quick-start
    script-execution
@@ -41,6 +41,7 @@ Modules
    api/system
    api/webserver
    api/fs
+   api/js-standard
 
 Indices and tables
 ==================

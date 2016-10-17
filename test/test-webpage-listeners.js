@@ -1,289 +1,69 @@
-var URLUtils = null;
-if ("slimer" in this) {
-    URLUtils = require("sdk/url");
-}
 
 
-describe("webpage with listeners", function() {
-    var webpage;
-    var trace = '';
-    var receivedRequest = [];
-    var initializedCounter = 0;
-    var cancelNextRequest = false;
-    var cancelResourceRequest = false;
-    var changeUrlNextRequest = null;
-    var traceResources = false;
-
-    function testWebpageListenerCreateWebPage() {
-        if (webpage)
-            webpage.close();
-        webpage = require("webpage").create();
-
-        webpage.onConsoleMessage= function(msg, lineNum, sourceId) {
-            console.log(msg);
-        }
-
-        webpage.onLoadStarted = function(url) {
-            var currentUrl = webpage.evaluate(function(c) {
-                window.initializedCounter = c;
-                return window.location.href;
-            }, initializedCounter);
-            trace +="LOADSTARTED:"+currentUrl+"\n";
-            if (url){
-                trace +="  loading url="+url+"\n";
-            }
-            //console.log("LOADSTARTED:"+currentUrl)
-        };
-
-        webpage.onUrlChanged = function(targetUrl) {
-            webpage.evaluate(function(c) {
-                window.initializedCounter = c;
-            }, initializedCounter);
-            trace += "URLCHANGED:"+targetUrl+"\n";
-            //console.log("URLCHANGED:"+targetUrl)
-        };
-
-        webpage.onInitialized = function() {
-            initializedCounter++;
-            var wi = webpage.evaluate(function(c) {
-                document.addEventListener('DOMContentLoaded', function() {
-                    window.initializedCounter = c;
-                }, false);
-                return (window.initializedCounter === undefined?-1:window.initializedCounter);
-            }, initializedCounter);
-            trace +="INITIALIZED "+wi+"\n";
-            //console.log("INITIALIZED "+wi)
-        };
-
-        webpage.onResourceRequested = function(request, ctrl) {
-            //console.log("--- webpage.onResourceRequested "+ request.id + " " + request.url);
-            if (receivedRequest[request.id] == undefined ) {
-                receivedRequest[request.id] = { req:null, start:null, end:null, err:null}
-            }
-            receivedRequest[request.id].req = request;
-            if (traceResources) {
-                trace +="RES REQUESTED "+request.url+"\n";
-            }
-            if (cancelResourceRequest && request.url.match(/\.(png|css)$/)) {
-                ctrl.abort();
-                //cancelResourceRequest = false;
-                if (traceResources) {
-                    trace +="    ABORTED "+request.url+"\n";
-                }
-            }
-            else if (cancelNextRequest) {
-                cancelNextRequest = false;
-                ctrl.abort();
-                if (traceResources) {
-                    trace +="    ABORTED\n";
-                }
-            }
-            else if (changeUrlNextRequest) {
-                var newUrl = changeUrlNextRequest
-                changeUrlNextRequest = null;
-                ctrl.changeUrl(newUrl);
-                if (traceResources) {
-                    trace +="    URL CHANGED to "+newUrl+"\n";
-                }
-
-            }
-        };
-
-        webpage.onResourceReceived = function(response) {
-            //console.log("--- webpage.onResourceReceived "+ response.id + " " + response.url + " "+response.stage);
-            if (receivedRequest[response.id] == undefined ) {
-                receivedRequest[response.id] = { req:null, start:null, end:null, err:null}
-            }
-            receivedRequest[response.id][response.stage] = response;
-            if (traceResources) {
-                trace +="RES RECEIVED "+response.stage+" - "+response.url+"\n";
-            }
-        };
-
-        webpage.onResourceError = function(response) {
-            //console.log("--- webpage.onResourceError "+ response.id + " " + response.url);
-            if (receivedRequest[response.id] == undefined ) {
-                receivedRequest[response.id] = { req:null, start:null, end:null, err:null}
-            }
-            receivedRequest[response.id].err = response;
-        };
-
-        webpage.onLoadFinished = function(status, url) {
-            var currentUrl = webpage.evaluate(function() {
-                return window.location.href + " - "+ window.initializedCounter;
-            });
-            trace += "LOADFINISHED:"+currentUrl+" "+status+"\n";
-            if (url){
-                trace +="  loaded url="+url+"\n";
-            }
-            //console.log("LOADFINISHED:"+currentUrl);
-        };
-    }
+describe("webpage with network listeners", function() {
 
     var domain = "http://localhost:8083/";
-    var file;
-    if (URLUtils) {
-        file = URLUtils.fromFilename(phantom.libraryPath);
-        if (file.charAt(file.length-1) !== '/'){
-            file += '/';
-        }
-        file += 'www/simplehello.html';
-    }
-    else {
-        file = 'file://'+phantom.libraryPath + '/www/simplehello.html'; // for test with phantomjs
-    }
 
-    function searchRequest(url, tests, min) {
-        min = min || 0
-        var listR = receivedRequest.filter(function(result, i) {
-            if (i < min || result == undefined || result == null || !('req' in result)) {
-                return false;
-            }
-            return (result.req.url == url);
-        });
-        expect(!(!listR || listR.length == 0)).toBeTruthy("request not found (for "+url+")");
-        if ((!listR) || listR.length == 0) {
-            return null;
-        }
-        var r = listR[0]
-        expect(r).toNotBe(null);
-        if (!r) {
-            expect(false).toBeTruthy(" request is null...");
-            return null;
-        }
-
-        if (tests == undefined) {
-            return r;
-        }
-        var ok = null;
-        try {
-            tests(r);
-            ok = true;
-        } catch(e) {
-            console.log("searchRequest tests error: "+e)
-        }
-        expect(ok).toBeTruthy("all tests have not been executed");
-        return ok;
-    }
-
-    function searchMissedRequest(url, min) {
-        min = min || 0
-        var listR = receivedRequest.filter(function(result, i) {
-            if (i < min || result == undefined || result == null || !('req' in result)) {
-                return false;
-            }
-            return (result.req.url == url);
-        });
-        expect(!listR || listR.length == 0).toBeTruthy("request has been found (for "+url+")");
-    }
-
-    function searchHeaderInResource(res, headerName){
-        var h = null;
-        res.headers.some(function(header){
-            if (header.name === headerName) {
-                h = header.value;
-                return true;
-            }
-            return false;
-        });
-        return h;
-    }
     var async = new AsyncSpec(this);
 
-    async.it("should be opened with a simple file",function(done) {
-        testWebpageListenerCreateWebPage()
-        webpage.open(file, function(success){
-            trace += "CALLBACK:"+success+"\n";
+    async.it("should open simple web page helloworld.html",function(done) {
+        networkUtils.reset();
+        networkUtils.traceResources = true;
+        networkUtils.init();
+        networkUtils.webpage.open(domain + 'helloworld.html', function(success){
+            networkUtils.trace += "CALLBACK:"+success+"\n";
             expect(success).toEqual("success");
+            expect(networkUtils.webpage.loading).toEqual(false);
+            expect(networkUtils.webpage.loadingProgress).toEqual(100);
             done();
         });
     });
 
-    async.it("should generate the expected trace for a simple file", function(done){
+
+    async.it("should generate the expected trace for helloworld.html", function(done){
         var expectedTrace = ""
         expectedTrace += "INITIALIZED -1\n";
         expectedTrace += "LOADSTARTED:about:blank\n";
-        if (URLUtils) expectedTrace += "  loading url="+file+"\n";
-        expectedTrace += "URLCHANGED:"+file+"\n";
+        if (URLUtils) expectedTrace += "  loading url=http://localhost:8083/helloworld.html\n";
+        expectedTrace += "RES REQUESTED http://localhost:8083/helloworld.html\n";
+        expectedTrace += "URLCHANGED:http://localhost:8083/helloworld.html\n";
+        expectedTrace += "RES RECEIVED start - http://localhost:8083/helloworld.html\n";
+        expectedTrace += "RES RECEIVED end - http://localhost:8083/helloworld.html\n";
         expectedTrace += "INITIALIZED 1\n";
-        expectedTrace += "LOADFINISHED:"+file+" - 2 success\n";
-        if (URLUtils) expectedTrace += "  loaded url="+file+"\n";
+
+        expectedTrace += "LOADFINISHED:http://localhost:8083/helloworld.html - 2 success\n";
+        if (URLUtils) expectedTrace += "  loaded url=http://localhost:8083/helloworld.html\n";
         expectedTrace += "CALLBACK:success\n";
-        expect(trace).toEqual(expectedTrace);
-        trace = "";
+        expect(networkUtils.trace).toEqual(expectedTrace);
         done();
     });
 
-    async.it("should have received file://..../simplehello.html", function(done){
-        searchRequest(file, function(r){
-            expect(r.req).toNotBe(null, "bbqsqsdqsdb");
+    async.it("should have received helloworld.html", function(done){
+        networkUtils.searchRequest(domain + 'helloworld.html', function(r){
+            expect(r.req).toNotBe(null);
             expect(r.start).toNotBe(null);
             expect(r.end).toNotBe(null);
             expect(r.err).toBeNull();
+            expect(r.timeout).toBeNull();
             expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
             expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
             expect(r.req.method).toEqual("GET");
-            expect(r.start.status).toBe(null);
-            expect(r.start.statusText).toBe(null);
-            expect(r.end.status).toBe(null);
-            expect(r.end.statusText).toBe(null);
-            expect(r.start.contentType).toBe(null);
-            expect(r.end.contentType).toBe(null);
+            expect(r.start.status).toEqual(200);
+            expect(r.start.statusText).toEqual('OK');
+            expect(r.end.status).toEqual(200);
+            expect(r.end.statusText).toEqual('OK');
+            expect(r.start.contentType).toEqual("text/html");
+            expect(r.end.contentType).toEqual("text/html");
         });
         done();
     });
 
-    async.it("should be opened with a simple file (related path)",function(done) {
-        testWebpageListenerCreateWebPage()
-        webpage.open('test/www/simplehello.html', function(success){
-            trace += "CALLBACK:"+success+"\n";
-            expect(success).toEqual("success");
-            done();
-        });
-    });
-
-    async.it("should generate the expected trace for a simple file (related path)", function(done){
-        var expectedTrace = ""
-        expectedTrace += "INITIALIZED -1\n";
-        expectedTrace += "LOADSTARTED:about:blank\n";
-        if (URLUtils) expectedTrace += "  loading url="+file+"\n";
-        expectedTrace += "URLCHANGED:"+file+"\n";
-        expectedTrace += "INITIALIZED 3\n";
-        expectedTrace += "LOADFINISHED:"+file+" - 4 success\n";
-        if (URLUtils) expectedTrace += "  loaded url="+file+"\n";
-        expectedTrace += "CALLBACK:success\n";
-        expect(trace).toEqual(expectedTrace);
-        trace = "";
-        done();
-    });
-
-    async.it("should have received file://..../simplehello.html (related path)", function(done){
-        searchRequest(file, function(r){
-            expect(r.req).toNotBe(null, "bbqsqsdqsdb");
-            expect(r.start).toNotBe(null);
-            expect(r.end).toNotBe(null);
-            expect(r.err).toBeNull();
-            expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
-            expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
-            expect(r.req.method).toEqual("GET");
-            expect(r.start.status).toBe(null);
-            expect(r.start.statusText).toBe(null);
-            expect(r.end.status).toBe(null);
-            expect(r.end.statusText).toBe(null);
-            expect(r.start.contentType).toBe(null);
-            expect(r.end.contentType).toBe(null);
-        });
-        done();
-    });
-
-    async.it("should be opened",function(done) {
-        trace = '';
-        receivedRequest = [];
-        initializedCounter = 0;
-
-        testWebpageListenerCreateWebPage()
-        webpage.open(domain + 'hello.html', function(success){
-            trace += "CALLBACK:"+success+"\n";
+    async.it("should open hello.html",function(done) {
+        networkUtils.reset();
+        networkUtils.traceResources = false;
+        networkUtils.init();
+        networkUtils.webpage.open(domain + 'hello.html', function(success){
+            networkUtils.trace += "CALLBACK:"+success+"\n";
             expect(success).toEqual("success");
             setTimeout(function(){ // wait after the XHR
                 done();
@@ -302,16 +82,17 @@ describe("webpage with listeners", function() {
         expectedTrace += "LOADFINISHED:http://localhost:8083/hello.html - 2 success\n";
         if (URLUtils) expectedTrace += "  loaded url=http://localhost:8083/hello.html\n";
         expectedTrace += "CALLBACK:success\n";
-        expect(trace).toEqual(expectedTrace);
+        expect(networkUtils.trace).toEqual(expectedTrace);
         done();
     });
 
     async.it("should have received hello.html", function(done){
-        searchRequest(domain + 'hello.html', function(r){
+        networkUtils.searchRequest(domain + 'hello.html', function(r){
             expect(r.req).toNotBe(null);
             expect(r.start).toNotBe(null);
             expect(r.end).toNotBe(null);
             expect(r.err).toBeNull();
+            expect(r.timeout).toBeNull();
             expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
             expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
             expect(r.req.method).toEqual("GET");
@@ -326,11 +107,12 @@ describe("webpage with listeners", function() {
     });
 
     async.it("should have received slimerjs.png", function(done){
-        searchRequest(domain + 'slimerjs.png', function(r){
+        networkUtils.searchRequest(domain + 'slimerjs.png', function(r){
             expect(r.req).toNotBe(null);
             expect(r.start).toNotBe(null);
             expect(r.end).toNotBe(null);
             expect(r.err).toBeNull();
+            expect(r.timeout).toBeNull();
             expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
             expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
             expect(r.req.method).toEqual("GET");
@@ -345,11 +127,12 @@ describe("webpage with listeners", function() {
     });
 
     async.it("should have received helloframe.html", function(done){
-        searchRequest(domain + 'helloframe.html', function(r){
+        networkUtils.searchRequest(domain + 'helloframe.html', function(r){
             expect(r.req).toNotBe(null);
             expect(r.start).toNotBe(null);
             expect(r.end).toNotBe(null);
             expect(r.err).toBeNull();
+            expect(r.timeout).toBeNull();
             expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
             expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
             expect(r.req.method).toEqual("GET");
@@ -364,11 +147,12 @@ describe("webpage with listeners", function() {
     });
 
     async.it("should have received hello.js", function(done){
-        searchRequest(domain + 'hello.js', function(r){
+        networkUtils.searchRequest(domain + 'hello.js', function(r){
             expect(r.req).toNotBe(null);
             expect(r.start).toNotBe(null);
             expect(r.end).toNotBe(null);
             expect(r.err).toBeNull();
+            expect(r.timeout).toBeNull();
             expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
             expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
             expect(r.req.method).toEqual("GET");
@@ -383,11 +167,12 @@ describe("webpage with listeners", function() {
     });
 
     async.it("should have received helloframe.css", function(done){
-        searchRequest(domain + 'helloframe.css', function(r){
+        networkUtils.searchRequest(domain + 'helloframe.css', function(r){
             expect(r.req).toNotBe(null);
             expect(r.start).toNotBe(null);
             expect(r.end).toNotBe(null);
             expect(r.err).toBeNull();
+            expect(r.timeout).toBeNull();
             expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
             expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
             expect(r.req.method).toEqual("GET");
@@ -402,15 +187,10 @@ describe("webpage with listeners", function() {
     });
 
     async.it("should receive event when a frame is changed", function(done){
-        var currentTrace = trace;
-        var currentReceivedRequest = receivedRequest;
-        var currentInitializedCounter = initializedCounter;
+        networkUtils.backupTrace();
+        networkUtils.reset();
 
-        trace = '';
-        receivedRequest = [];
-        initializedCounter = 0;
-
-        webpage.evaluate(function(){
+        networkUtils.webpage.evaluate(function(){
             document.getElementsByTagName( "iframe" )[ 0 ].contentWindow.location.href="simplehello.html"
             document.getElementsByTagName( "img" )[ 0 ].src="glouton-home.png"
         })
@@ -419,13 +199,14 @@ describe("webpage with listeners", function() {
             if (URLUtils) expectedTrace += "  loading url=http://localhost:8083/simplehello.html\n";
             expectedTrace += "LOADFINISHED:http://localhost:8083/hello.html - 0 success\n";
             if (URLUtils) expectedTrace += "  loaded url=http://localhost:8083/simplehello.html\n";
-            expect(trace).toEqual(expectedTrace);
-            expect(receivedRequest.length).toEqual(9);
-            searchRequest(domain + 'simplehello.html', function(r){
+            expect(networkUtils.trace).toEqual(expectedTrace);
+            expect(networkUtils.receivedRequest.length).toEqual(9);
+            networkUtils.searchRequest(domain + 'simplehello.html', function(r){
                 expect(r.req).toNotBe(null);
                 expect(r.start).toNotBe(null);
                 expect(r.end).toNotBe(null);
                 expect(r.err).toBeNull();
+                expect(r.timeout).toBeNull();
                 expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
                 expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
                 expect(r.req.method).toEqual("GET");
@@ -436,16 +217,14 @@ describe("webpage with listeners", function() {
                 expect(r.start.contentType).toEqual("text/html");
                 expect(r.end.contentType).toEqual("text/html");
             });
-            trace = currentTrace;
-            receivedRequest = currentReceivedRequest;
-            initializedCounter = currentInitializedCounter;
+            networkUtils.restoreTrace();
             done();
         },200);
     });
 
     async.it("is opening a new page",function(done) {
-        webpage.open(domain + 'mouseevent.html', function(success){
-            trace += "CALLBACK2:"+success+"\n";
+        networkUtils.webpage.open(domain + 'mouseevent.html', function(success){
+            networkUtils.trace += "CALLBACK2:"+success+"\n";
             expect(success).toEqual("success");
             done();
         });
@@ -467,16 +246,17 @@ describe("webpage with listeners", function() {
         expectedTrace += "LOADFINISHED:http://localhost:8083/mouseevent.html - 3 success\n";
         if (URLUtils) expectedTrace += "  loaded url=http://localhost:8083/mouseevent.html\n";
         expectedTrace += "CALLBACK2:success\n";
-        expect(trace).toEqual(expectedTrace);
+        expect(networkUtils.trace).toEqual(expectedTrace);
         done();
     });
 
     async.it("should have received mouseevent.html", function(done){
-        searchRequest(domain + 'mouseevent.html', function(r){
+        networkUtils.searchRequest(domain + 'mouseevent.html', function(r){
             expect(r.req).toNotBe(null);
             expect(r.start).toNotBe(null);
             expect(r.end).toNotBe(null);
             expect(r.err).toBeNull();
+            expect(r.timeout).toBeNull();
             expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
             expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
             expect(r.req.method).toEqual("GET");
@@ -491,10 +271,10 @@ describe("webpage with listeners", function() {
     });
 
     async.it("is opening an inexistant page",function(done) {
-        trace = "";
-        receivedRequest = [];
-        webpage.open(domain+'plop.html', function(success){
-            trace += "CALLBACK:"+success+"\n";
+        networkUtils.trace = "";
+        networkUtils.receivedRequest = [];
+        networkUtils.webpage.open(domain+'plop.html', function(success){
+            networkUtils.trace += "CALLBACK:"+success+"\n";
             expect(success).toEqual("success");
             done();
         });
@@ -508,17 +288,18 @@ describe("webpage with listeners", function() {
         expectedTrace += "LOADFINISHED:http://localhost:8083/plop.html - 4 success\n";
         if (URLUtils) expectedTrace += "  loaded url=http://localhost:8083/plop.html\n";
         expectedTrace += "CALLBACK:success\n";
-        expect(trace).toEqual(expectedTrace);
+        expect(networkUtils.trace).toEqual(expectedTrace);
         done();
     });
 
     async.it("should have received a 404 page", function(done){
-        expect(receivedRequest.length).toEqual(2);
-        searchRequest(domain + 'plop.html', function(r){
+        expect(networkUtils.receivedRequest.length).toEqual(2);
+        networkUtils.searchRequest(domain + 'plop.html', function(r){
             expect(r.req).toNotBe(null);
             expect(r.start).toNotBe(null);
             expect(r.end).toNotBe(null);
             expect(r.err).toNotBe(null);
+            expect(r.timeout).toBeNull();
             expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
             expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
             expect(r.req.method).toEqual("GET");
@@ -531,15 +312,17 @@ describe("webpage with listeners", function() {
             expect(r.err.url).toEqual(r.req.url);
             expect(r.err.errorCode).toEqual(203);
             expect(r.err.errorString).toNotEqual('');
+            expect(r.err.status).toEqual(404);
+            expect(r.err.statusText).toEqual('Not Found');
         });
         done();
     });
 
     async.it("is opening a new page from an inexistant domain name",function(done) {
-        trace = "";
-        receivedRequest = [];
-        webpage.open('http://qsdqsdqs.qsfdsfi/plop.html', function(success){
-            trace += "CALLBACK:"+success+"\n";
+        networkUtils.trace = "";
+        networkUtils.receivedRequest = [];
+        networkUtils.webpage.open('http://qsdqsdqs.qsfdsfi/plop.html', function(success){
+            networkUtils.trace += "CALLBACK:"+success+"\n";
             expect(success).toEqual("fail");
             done();
         });
@@ -548,20 +331,21 @@ describe("webpage with listeners", function() {
         var expectedTrace = ""
         expectedTrace += "LOADSTARTED:http://localhost:8083/plop.html\n";
         if (URLUtils) expectedTrace += "  loading url=http://qsdqsdqs.qsfdsfi/plop.html\n";
-        expectedTrace += "LOADFINISHED:http://localhost:8083/plop.html - 4 fail\n";
+        expectedTrace += "LOADFINISHED:http://qsdqsdqs.qsfdsfi/plop.html - undefined fail\n";
         if (URLUtils) expectedTrace += "  loaded url=http://qsdqsdqs.qsfdsfi/plop.html\n";
         expectedTrace += "CALLBACK:fail\n";
-        expect(trace).toEqual(expectedTrace);
+        expect(networkUtils.trace).toEqual(expectedTrace);
         done();
     });
 
     async.it("should have received an error page", function(done){
-        expect(receivedRequest.length).toEqual(2);
-        searchRequest("http://qsdqsdqs.qsfdsfi/plop.html", function(r){
+        expect(networkUtils.receivedRequest.length).toEqual(2);
+        networkUtils.searchRequest("http://qsdqsdqs.qsfdsfi/plop.html", function(r){
             expect(r.req).toNotBe(null);
             expect(r.start).toBeNull();
             expect(r.end).toNotBe(null);
             expect(r.err).toNotBe(null);
+            expect(r.timeout).toBeNull();
             expect(r.end.contentType).toBeNull()
             expect(r.end.redirectURL).toBeNull()
             expect(r.end.status).toBeNull()
@@ -571,298 +355,20 @@ describe("webpage with listeners", function() {
             expect(r.err.url).toEqual(r.req.url);
             expect(r.err.errorCode).toEqual(3);
             expect(r.err.errorString).toNotEqual('');
+            expect(r.err.status).toBeNull()
+            expect(r.err.statusText).toBeNull()
         });
         done();
     });
 
-    async.it("is opening a new page after a redirection to an absolute url",function(done) {
-        trace = "";
-        receivedRequest = [];
-        testWebpageListenerCreateWebPage()
-        webpage.open(domain+'redirectToSimpleHello', function(success){
-            trace += "CALLBACK:"+success+"\n";
-            expect(success).toEqual("success");
-            done();
-        });
-    });
-    async.it("should generate the expected trace for the redirection", function(done){
-        var expectedTrace = ""
-        expectedTrace += "INITIALIZED -1\n";
-        expectedTrace += "LOADSTARTED:about:blank\n";
-        if (URLUtils) { 
-            expectedTrace += "  loading url=http://localhost:8083/redirectToSimpleHello\n";
-            expectedTrace += "URLCHANGED:http://localhost:8083/simplehello.html\n";
-            expectedTrace += "INITIALIZED 5\n";
-            expectedTrace += "LOADFINISHED:http://localhost:8083/simplehello.html - 6 success\n";
-            expectedTrace += "  loaded url=http://localhost:8083/simplehello.html\n";
-        }
-        else {// phantomjs does not follow redirection
-            expectedTrace += "URLCHANGED:http://localhost:8083/redirectToSimpleHello\n";
-            expectedTrace += "INITIALIZED 5\n";
-            expectedTrace += "LOADFINISHED:http://localhost:8083/redirectToSimpleHello - 6 success\n";
-        }
-        expectedTrace += "CALLBACK:success\n";
-        expect(trace).toEqual(expectedTrace);
-        done();
-    });
-
-    async.it("should have received the response for redirection", function(done){
-        searchRequest(domain+"redirectToSimpleHello", function(r){
-            expect(r.req).toNotBe(null, "req is null");
-            expect(r.req.url ).toEqual(domain+"redirectToSimpleHello");
-            expect(r.req.method).toEqual("GET");
-            if (URLUtils) { // phantomjs does not generate "start" receivedResource during redirection
-                expect(r.start).toNotBe(null, "start is null");
-                expect(r.start.id).toEqual( r.req.id);
-                expect(r.start.url).toEqual(r.end.url);
-                expect(r.start.status).toEqual(301);
-                expect(r.start.statusText).toEqual('Moved Permanently');
-                expect(r.start.contentType).toBeNull("start content type");
-                expect(r.start.redirectURL).toEqual("http://localhost:8083/simplehello.html");
-                expect(searchHeaderInResource(r.start, 'foo')).toEqual('bar');
-            }
-            else
-                expect(r.start).toBeNull();
-            expect(r.end).toNotBe(null, "end is null");
-            expect(r.end.id).toEqual(r.req.id);
-            expect(r.end.url).toEqual(domain+"redirectToSimpleHello");
-            expect(r.end.status).toEqual(301, "end.status");
-            expect(r.end.statusText).toEqual('Moved Permanently', "end.statusText");
-            expect(r.end.contentType).toBeNull("end content type");
-            expect(r.end.redirectURL).toEqual("http://localhost:8083/simplehello.html");
-            expect(searchHeaderInResource(r.end, 'foo')).toEqual('bar');
-            expect(r.err).toBeNull();
-        });
-        done();
-    });
-
-    async.it("should have received the simple hello page", function(done){
-        if (URLUtils) {
-            searchRequest(domain+"simplehello.html", function(r){
-                expect(r.req).toNotBe(null, "req is null");
-                expect(r.req.url ).toEqual(domain+"simplehello.html");
-                expect(r.req.method).toEqual("GET");
-                expect(r.start).toNotBe(null, "start is null");
-                expect(r.start.id).toEqual( r.req.id);
-                expect(r.start.url).toEqual(r.end.url);
-                expect(r.start.status).toEqual(200);
-                expect(r.start.statusText).toEqual('OK');
-                expect(r.start.contentType).toEqual("text/html", "start content type");
-                expect(r.start.redirectURL).toBeNull();
-                expect(r.end).toNotBe(null, "end is null");
-                expect(r.end.id).toEqual(r.req.id);
-                expect(r.end.url).toEqual(domain+"simplehello.html");
-                expect(r.end.status).toEqual(200, "end.status");
-                expect(r.end.statusText).toEqual('OK', "end.statusText");
-                expect(r.end.contentType).toEqual("text/html", "end content type");
-                expect(r.end.redirectURL).toBeNull();
-                expect(r.err).toBeNull();
-            });
-        }
-        else {
-            // PhantomJS 1.9.2 doesn't follow redirections
-            searchMissedRequest(domain+"simplehello.html");
-        }
-        done();
-    });
-
-
-
-    async.it("is opening a new page after a redirection to an absolute url without path",function(done) {
-        // we test the case where a slash is added by the webserver on the response url
-        trace = "";
-        receivedRequest = [];
-        testWebpageListenerCreateWebPage()
-        webpage.open(domain+'redirectToRoot', function(success){
-            trace += "CALLBACK:"+success+"\n";
-            expect(success).toEqual("success");
-            done();
-        });
-    });
-    async.it("should generate the expected trace for the redirection", function(done){
-        var expectedTrace = ""
-        expectedTrace += "INITIALIZED -1\n";
-        expectedTrace += "LOADSTARTED:about:blank\n";
-
-        if (URLUtils) { 
-            expectedTrace += "  loading url=http://localhost:8083/redirectToRoot\n";
-            expectedTrace += "URLCHANGED:http://localhost:8083/\n";
-            expectedTrace += "INITIALIZED 7\n";
-            expectedTrace += "LOADFINISHED:http://localhost:8083/ - 8 success\n";
-            expectedTrace += "  loaded url=http://localhost:8083/\n";
-        }
-        else {// phantomjs does not follow redirection
-            expectedTrace += "URLCHANGED:http://localhost:8083/redirectToRoot\n";
-            expectedTrace += "INITIALIZED 7\n";
-            expectedTrace += "LOADFINISHED:http://localhost:8083/redirectToRoot - 8 success\n";
-        }
-        expectedTrace += "CALLBACK:success\n";
-        expect(trace).toEqual(expectedTrace);
-        done();
-    });
-
-    async.it("should have received the response for redirection", function(done){
-        searchRequest(domain+"redirectToRoot", function(r){
-            expect(r.req).toNotBe(null, "req is null");
-            expect(r.req.url ).toEqual(domain+"redirectToRoot");
-            expect(r.req.method).toEqual("GET");
-            if (URLUtils) { // phantomjs does not generate "start" receivedResource during redirection
-                expect(r.start).toNotBe(null, "start is null");
-                expect(r.start.id).toEqual( r.req.id);
-                expect(r.start.url).toEqual(r.end.url);
-                expect(r.start.status).toEqual(301);
-                expect(r.start.statusText).toEqual('Moved Permanently');
-                expect(r.start.contentType).toBeNull("start content type");
-            }
-            else
-                expect(r.start).toBeNull();
-            expect(r.end).toNotBe(null, "end is null");
-            expect(r.end.id).toEqual(r.req.id);
-            expect(r.end.url).toEqual(domain+"redirectToRoot");
-            expect(r.end.status).toEqual(301, "end.status");
-            expect(r.end.statusText).toEqual('Moved Permanently', "end.statusText");
-            expect(r.end.contentType).toBeNull("end content type");
-            expect(r.end.redirectURL).toEqual("http://localhost:8083/");
-            expect(r.err).toBeNull();
-        });
-        done();
-    });
-
-    async.it("should have received the index directory", function(done){
-        if (URLUtils) {
-            expect(receivedRequest.length).toEqual(3);
-            searchRequest(domain, function(r){
-                expect(r.req).toNotBe(null, "req is null");
-                expect(r.req.url ).toEqual(domain);
-                expect(r.req.method).toEqual("GET");
-                expect(r.start).toNotBe(null, "start is null");
-                expect(r.start.id).toEqual( r.req.id);
-                expect(r.start.url).toEqual(r.end.url);
-                expect(r.start.status).toEqual(200);
-                expect(r.start.statusText).toEqual('OK');
-                expect(r.start.contentType).toEqual("text/html");
-                expect(r.start.redirectURL).toBeNull();
-                expect(r.end).toNotBe(null, "end is null");
-                expect(r.end.id).toEqual(r.req.id);
-                expect(r.end.url).toEqual(domain);
-                expect(r.end.status).toEqual(200);
-                expect(r.end.statusText).toEqual('OK');
-                expect(r.end.contentType).toEqual("text/html");
-                expect(r.end.redirectURL).toBeNull();
-                expect(r.err).toBeNull();
-           });
-        }
-        else {
-            // PhantomJS 1.9.2 doesn't follow redirections
-            searchMissedRequest(domain);
-        }
-        done();
-    });
-    
-    async.it("is opening a new page after a redirection2 to a relative URL",function(done) {
-        trace = "";
-        receivedRequest = [];
-        testWebpageListenerCreateWebPage()
-        webpage.open(domain+'redirectToSimpleHello2', function(success){
-            trace += "CALLBACK:"+success+"\n";
-            expect(success).toEqual("success");
-            done();
-        });
-    });
-
-    async.it("should generate the expected trace for the redirection2", function(done){
-        var expectedTrace = ""
-        expectedTrace += "INITIALIZED -1\n";
-        expectedTrace += "LOADSTARTED:about:blank\n";
-
-        if (URLUtils) { 
-            expectedTrace += "  loading url=http://localhost:8083/redirectToSimpleHello2\n";
-            expectedTrace += "URLCHANGED:http://localhost:8083/simplehello.html\n";
-            expectedTrace += "INITIALIZED 9\n";
-            expectedTrace += "LOADFINISHED:http://localhost:8083/simplehello.html - 10 success\n";
-            expectedTrace += "  loaded url=http://localhost:8083/simplehello.html\n";
-        }
-        else {// phantomjs does not follow redirection
-            expectedTrace += "URLCHANGED:http://localhost:8083/redirectToSimpleHello2\n";
-            expectedTrace += "INITIALIZED 9\n";
-            expectedTrace += "LOADFINISHED:http://localhost:8083/redirectToSimpleHello2 - 10 success\n";
-        }
-
-        expectedTrace += "CALLBACK:success\n";
-        expect(trace).toEqual(expectedTrace);
-        done();
-    });
-
-    async.it("should have received the response for redirection2", function(done){
-        searchRequest(domain+"redirectToSimpleHello2", function(r){
-            expect(r.req).toNotBe(null, "req is null");
-            expect(r.req.url ).toEqual(domain+"redirectToSimpleHello2");
-            expect(r.req.method).toEqual("GET");
-            if (URLUtils) { // phantomjs does not generate "start" receivedResource during redirection
-                expect(r.start).toNotBe(null, "start is null");
-                expect(r.start.id).toEqual( r.req.id);
-                expect(r.start.url).toEqual(r.end.url);
-                expect(r.start.status).toEqual(302);
-                expect(r.start.statusText).toEqual('Found');
-                expect(r.start.contentType).toBeNull("start content type");
-                expect(r.start.redirectURL).toEqual("http://localhost:8083/simplehello.html");
-                expect(searchHeaderInResource(r.start, 'foo')).toEqual('bar');
-            }
-            else
-                expect(r.start).toBeNull();
-            expect(r.end).toNotBe(null, "end is null");
-            expect(r.end.id).toEqual(r.req.id);
-            expect(r.end.url).toEqual(domain+"redirectToSimpleHello2");
-            expect(r.end.status).toEqual(302, "end.status");
-            expect(r.end.statusText).toEqual('Found', "end.statusText");
-            expect(r.end.contentType).toBeNull("end content type");
-            expect(r.end.redirectURL).toEqual("http://localhost:8083/simplehello.html");
-            expect(searchHeaderInResource(r.end, 'foo')).toEqual('bar');
-            expect(r.err).toBeNull();
-        });
-        done();
-    });
-
-    async.it("should have received the simple hello page #2", function(done){
-        if (URLUtils) {
-            expect(receivedRequest.length).toEqual(3);
-            searchRequest(domain+"simplehello.html", function(r){
-                expect(r.req).toNotBe(null, "req is null");
-                expect(r.req.url ).toEqual(domain+"simplehello.html");
-                expect(r.req.method).toEqual("GET");
-                expect(r.start).toNotBe(null, "start is null");
-                expect(r.start.id).toEqual( r.req.id);
-                expect(r.start.url).toEqual(r.end.url);
-                expect(r.start.status).toEqual(200);
-                expect(r.start.statusText).toEqual('OK');
-                expect(r.start.contentType).toEqual("text/html");
-                expect(r.start.redirectURL).toBeNull();
-                expect(r.end).toNotBe(null, "end is null");
-                expect(r.end.id).toEqual(r.req.id);
-                expect(r.end.url).toEqual(domain+"simplehello.html");
-                expect(r.end.status).toEqual(200);
-                expect(r.end.statusText).toEqual('OK');
-                expect(r.end.contentType).toEqual("text/html");
-                expect(r.end.redirectURL).toBeNull();
-                expect(r.err).toBeNull();
-            });
-        }
-        else {
-            // PhantomJS 1.9.2 doesn't follow redirections
-            searchMissedRequest(domain+"simplehello.html");
-        }
-        done();
-    });
 
     async.it("will open a page and abort the main request",function(done) {
-        trace = '';
-        receivedRequest = [];
-        initializedCounter = 0;
-        cancelNextRequest = true;
+        networkUtils.reset();
+        networkUtils.cancelNextRequest = true;
 
-        testWebpageListenerCreateWebPage()
-        webpage.open(domain + 'simplehello.html', function(success){
-            trace += "CALLBACK:"+success+"\n";
+        networkUtils.init()
+        networkUtils.webpage.open(domain + 'simplehello.html', function(success){
+            networkUtils.trace += "CALLBACK:"+success+"\n";
             expect(success).toEqual("fail");
             done();
         });
@@ -876,16 +382,17 @@ describe("webpage with listeners", function() {
         expectedTrace += "LOADFINISHED:about:blank - 1 fail\n";
         if (URLUtils) expectedTrace += "  loaded url=http://localhost:8083/simplehello.html\n";
         expectedTrace += "CALLBACK:fail\n";
-        expect(trace).toEqual(expectedTrace);
+        expect(networkUtils.trace).toEqual(expectedTrace);
         done();
     });
 
     async.it("should have received correct data", function(done){
-        searchRequest(domain+"simplehello.html", function(r){
+        networkUtils.searchRequest(domain+"simplehello.html", function(r){
             expect(r.req).toNotBe(null);
             expect(r.start).toBeNull();
             expect(r.end).toNotBe(null);
             expect(r.err).toNotBe(null);
+            expect(r.timeout).toBeNull();
             expect(r.req.id == r.end.id).toBeTruthy();
             expect(r.end.url).toEqual("http://localhost:8083/simplehello.html");
             expect(r.req.method).toEqual("GET");
@@ -897,25 +404,24 @@ describe("webpage with listeners", function() {
         done();
     });
 
+
     async.it("will open a page and cancel a resource request",function(done) {
-        trace = '';
-        receivedRequest = [];
-        initializedCounter = 0;
-        cancelResourceRequest = true;
-        traceResources = true;
-        testWebpageListenerCreateWebPage()
-        webpage.open(domain + 'hello.html', function(success){
-            trace += "CALLBACK:"+success+"\n";
+        networkUtils.reset();
+        networkUtils.cancelResourceRequest = true;
+        networkUtils.traceResources = true;
+        networkUtils.init()
+        networkUtils.webpage.open(domain + 'hello.html', function(success){
+            networkUtils.trace += "CALLBACK:"+success+"\n";
             expect(success).toEqual("success");
-            traceResources = false;
-            cancelResourceRequest = false;
+            networkUtils.traceResources = false;
+            networkUtils.cancelResourceRequest = false;
             done();
         });
     });
 
     async.it("should generate the expected trace", function(done){
-        traceResources = false;
-        cancelResourceRequest = false;
+        networkUtils.traceResources = false;
+        networkUtils.cancelResourceRequest = false;
         var expectedTrace = ""
         expectedTrace += "INITIALIZED -1\n";
         expectedTrace += "LOADSTARTED:about:blank\n";
@@ -929,8 +435,11 @@ describe("webpage with listeners", function() {
         expectedTrace += "INITIALIZED 1\n";
         expectedTrace += "RES REQUESTED http://localhost:8083/hello.js\n";
         expectedTrace += "RES REQUESTED http://localhost:8083/slimerjs.png\n";
+        expectedTrace += "RES ERROR 95 - http://localhost:8083/slimerjs.png\n";
         expectedTrace += "    ABORTED http://localhost:8083/slimerjs.png\n";
+        expectedTrace += "RES ERROR 99 - http://localhost:8083/slimerjs.png\n";
         expectedTrace += "RES REQUESTED http://localhost:8083/helloframe.html\n";
+        expectedTrace += "RES ERROR 99 - http://localhost:8083/slimerjs.png\n";
         expectedTrace += "RES RECEIVED end - http://localhost:8083/slimerjs.png\n";
         expectedTrace += "RES RECEIVED start - http://localhost:8083/hello.js\n";
         expectedTrace += "RES REQUESTED http://localhost:8083/hello.txt\n";
@@ -938,7 +447,10 @@ describe("webpage with listeners", function() {
         expectedTrace += "RES RECEIVED start - http://localhost:8083/helloframe.html\n";
         expectedTrace += "RES RECEIVED end - http://localhost:8083/helloframe.html\n";
         expectedTrace += "RES REQUESTED http://localhost:8083/helloframe.css\n";
+        expectedTrace += "RES ERROR 95 - http://localhost:8083/helloframe.css\n";
         expectedTrace += "    ABORTED http://localhost:8083/helloframe.css\n";
+        expectedTrace += "RES ERROR 99 - http://localhost:8083/helloframe.css\n";
+        expectedTrace += "RES ERROR 99 - http://localhost:8083/helloframe.css\n";
         expectedTrace += "RES RECEIVED end - http://localhost:8083/helloframe.css\n";
         //expectedTrace += "RES RECEIVED start - http://localhost:8083/hello.txt\n";
         //expectedTrace += "RES RECEIVED end - http://localhost:8083/hello.txt\n";
@@ -948,12 +460,12 @@ describe("webpage with listeners", function() {
             expectedTrace += "  loaded url=http://localhost:8083/hello.html\n";
         }
         expectedTrace += "CALLBACK:success\n";
-        expect(trace).toEqual(expectedTrace);
+        expect(networkUtils.trace).toEqual(expectedTrace);
         done();
     });
 
     async.it("should have received correct data", function(done){
-        searchRequest(domain+"hello.html", function(r){
+        networkUtils.searchRequest(domain+"hello.html", function(r){
             expect(r.req).toNotBe(null, "req is null");
             expect(r.req.url ).toEqual(domain+"hello.html");
             expect(r.req.method).toEqual("GET");
@@ -972,176 +484,291 @@ describe("webpage with listeners", function() {
         done();
     });
 
-    async.it("will open a page and do a manual redirection",function(done) {
-        trace = '';
-        receivedRequest = [];
-        initializedCounter = 0;
-        changeUrlNextRequest = domain + 'helloframe.html';
 
-        testWebpageListenerCreateWebPage()
-        webpage.open(domain + 'simplehello.html', function(success){
-            trace += "CALLBACK:"+success+"\n";
+
+    async.it("should open missingresource.html",function(done) {
+        networkUtils.reset();
+
+        networkUtils.init();
+        networkUtils.webpage.open(domain + 'missingresource.html', function(success){
+            networkUtils.trace += "CALLBACK:"+success+"\n";
             expect(success).toEqual("success");
             done();
         });
     });
 
-    async.it("should generate the expected trace with manual redirection", function(done){
+    async.it("should generate the expected trace", function(done){
         var expectedTrace = ""
         expectedTrace += "INITIALIZED -1\n";
         expectedTrace += "LOADSTARTED:about:blank\n";
-        if (URLUtils) {
-            expectedTrace += "  loading url=http://localhost:8083/simplehello.html\n";
-            expectedTrace += "URLCHANGED:http://localhost:8083/helloframe.html\n";
-            expectedTrace += "INITIALIZED 1\n";
-            expectedTrace += "LOADFINISHED:http://localhost:8083/helloframe.html - 2 success\n";
-            expectedTrace += "  loaded url=http://localhost:8083/helloframe.html\n";
-        }
-        else {
-            expectedTrace += "URLCHANGED:http://localhost:8083/simplehello.html\n";
-            expectedTrace += "INITIALIZED 1\n";
-            expectedTrace += "LOADFINISHED:http://localhost:8083/simplehello.html - 2 success\n";
-        }
+        if (URLUtils) expectedTrace += "  loading url=http://localhost:8083/missingresource.html\n";
+        expectedTrace += "URLCHANGED:http://localhost:8083/missingresource.html\n";
+        expectedTrace += "INITIALIZED 1\n";
+        expectedTrace += "LOADFINISHED:http://localhost:8083/missingresource.html - 2 success\n";
+        if (URLUtils) expectedTrace += "  loaded url=http://localhost:8083/missingresource.html\n";
         expectedTrace += "CALLBACK:success\n";
-        expect(trace).toEqual(expectedTrace);
+        expect(networkUtils.trace).toEqual(expectedTrace);
         done();
     });
 
-    async.it("should have received correct data with manual redirection", function(done){
-        searchRequest(domain+"simplehello.html", function(r){
-            expect(r.req).toNotBe(null, "req is null");
-            expect(r.req.url ).toEqual(domain+"simplehello.html");
-            expect(r.req.method).toEqual("GET");
-            expect(r.start).toNotBe(null, "start is null");
-            expect(r.start.id).toEqual( r.req.id);
-            expect(r.start.url).toEqual(r.end.url);
-            expect(r.end).toNotBe(null, "end is null");
-            expect(r.end.id).toEqual(r.req.id);
-            expect(r.start.redirectURL).toBeNull();
-            expect(r.end.redirectURL).toBeNull();
-            if (URLUtils) {
-                // gecko generates two request object. The first request is in fact
-                // canceled, and it create a new one for the new url
-                expect(r.start.status).toBeNull();
-                expect(r.start.statusText).toBeNull();
-                expect(r.start.contentType).toBeNull();
-                expect(r.end.url).toEqual(domain+"simplehello.html");
-                expect(r.end.status).toBeNull();
-                expect(r.end.statusText).toBeNull();
-                expect(r.end.contentType).toBeNull();
-            }
-            else {
-                // PhantomJS generates only one response: this is the same request object
-                // before and after the redirection...
-                expect(r.start.status).toEqual(200);
-                expect(r.start.statusText).toEqual('OK');
-                expect(r.start.contentType).toEqual("text/html");
-                expect(r.end.url).toEqual(domain+"helloframe.html");
-                expect(r.end.status).toEqual(200);
-                expect(r.end.statusText).toEqual('OK');
-                expect(r.end.contentType).toEqual("text/html");
-            }
+    async.it("should have received missignresource.html", function(done){
+        networkUtils.searchRequest(domain + 'missingresource.html', function(r){
+            expect(r.req).toNotBe(null);
+            expect(r.start).toNotBe(null);
+            expect(r.end).toNotBe(null);
             expect(r.err).toBeNull();
+            expect(r.timeout).toBeNull();
+            expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
+            expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
+            expect(r.req.method).toEqual("GET");
+            expect(r.start.status).toEqual(200);
+            expect(r.start.statusText).toEqual('OK');
+            expect(r.end.status).toEqual(200);
+            expect(r.end.statusText).toEqual('OK');
+            expect(r.start.contentType).toEqual("text/html");
+            expect(r.end.contentType).toEqual("text/html");
         });
         done();
     });
 
-    async.it("should have received the helloframe.html page", function(done){
-        if (URLUtils) {
-            searchRequest(domain+"helloframe.html", function(r){
-                expect(r.req).toNotBe(null, "req is null");
-                expect(r.req.url ).toEqual(domain+"helloframe.html");
-                expect(r.req.method).toEqual("GET");
-                expect(r.start).toNotBe(null, "start is null");
-                expect(r.start.id).toEqual( r.req.id);
-                expect(r.start.url).toEqual(r.end.url);
-                expect(r.start.status).toEqual(200);
-                expect(r.start.statusText).toEqual('OK');
-                expect(r.start.contentType).toEqual("text/html", "start content type");
-                expect(r.end).toNotBe(null, "end is null");
-                expect(r.end.id).toEqual(r.req.id);
-                expect(r.end.url).toEqual(domain+"helloframe.html");
-                expect(r.end.status).toEqual(200, "end.status");
-                expect(r.end.statusText).toEqual('OK', "end.statusText");
-                expect(r.end.contentType).toEqual("text/html", "end content type");
-                expect(r.err).toBeNull();
-            });
-        }
-        else {
-            // PhantomJS 1.9.2 doesn't generate an other internal request
-            // for manual redirection
-            searchMissedRequest(domain+"helloframe.html");
-        }
+    async.it("should not have received missing.css", function(done){
+        networkUtils.searchRequest(domain + 'missing.css', function(r){
+            expect(r.req).toNotBe(null);
+            expect(r.start).toNotBe(null);
+            expect(r.end).toNotBe(null);
+            expect(r.err).toNotBe(null);
+            expect(r.timeout).toBeNull();
+            expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
+            expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
+            expect(r.req.method).toEqual("GET");
+            expect(r.start.status).toEqual(404);
+            expect(r.start.statusText).toEqual('Not Found');
+            expect(r.end.status).toEqual(404);
+            expect(r.end.statusText).toEqual('Not Found');
+            expect(r.start.contentType).toEqual("text/html");
+            expect(r.end.contentType).toEqual("text/html");
+            expect((r.err.id == r.start.id) && (r.err.id == r.end.id)).toBeTruthy();
+            expect((r.err.url == r.start.url) && (r.err.url == r.end.url)).toBeTruthy();
+            expect(r.err.errorCode).toEqual(203);
+            expect(r.err.status).toEqual(404);
+            expect(r.err.statusText).toEqual('Not Found');
+        });
         done();
     });
 
-    var testCodes = [
-        101, 102, 118,
-        200, 201, 202, 203, 204, 205, 206, 207, 210,
-        300, 301, 302, 303, 304, 305, 307, 310,
-        400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413,
-            414, 415, 416, 417, 418, 422, 423, 424, 425, 426, 449, 450,
-        500, 501, 502, 503, 504, 505, 507, 509
-    ];
-    // missing code: 100 is CONTINUE, so don't expect a terminated response
-    // 102, 118, 408 are buggy in gecko
-    testCodes.forEach(function(statusCode){
-        async.it("is opening a page with response status code "+statusCode,function(done) {
-            trace = "";
-            receivedRequest = [];
-            testWebpageListenerCreateWebPage()
-            webpage.open(domain+'statuscode/'+statusCode, function(success){
-                if (statusCode == 204 || statusCode == 205 || (URLUtils && slimer.geckoVersion.major <= 25 && statusCode == 408)) {
-                    expect(success).toEqual("fail");
-                }
-                else
-                    expect(success).toEqual("success");
-
-                var r = receivedRequest.filter(function(result, i) {
-                    if (i == 0)
-                        return false;
-                    return result.req.url == (domain + 'statuscode/'+statusCode);
-                })[0];
-                expect(r).toNotBe(null);
-                expect(r.req).toNotBe(null);
-                var startHasToBeNull = false;
-                if (URLUtils && slimer.geckoVersion.major <= 25 && statusCode == 408) {
-                    startHasToBeNull = true;
-                }
-                else if (!URLUtils && (statusCode <= 199 || statusCode == 204 || statusCode == 304)) {
-                    startHasToBeNull = true;
-                }
-                if (!startHasToBeNull) {
-                    expect(r.start).toNotBe(null);
-                    if (statusCode != 102 && statusCode != 118) { // gecko doesn't return response code for this http response
-                        expect(r.start.status).toEqual(statusCode);
-                    }
-                }
-                else
-                    expect(r.start).toBeNull();
-                expect(r.end).toNotBe(null);
-                if (statusCode >= 400) {
-                    expect(r.err).toNotBe(null);
-                }
-                else
-                    expect(r.err).toBeNull();
-
-                if (r.end && statusCode != 102 && statusCode != 118 && statusCode != 408) { // gecko doesn't return response code for this http response
-                    expect(r.end.status).toEqual(statusCode);
-                }
-                if (r.end) {
-                    expect(r.req.id == r.end.id).toBeTruthy();
-                    expect(r.req.url == r.end.url).toBeTruthy();
-                }
-                else expect(false).toBeTruthy();
-                expect(r.req.method).toEqual("GET");
-                done();
-            });
+    async.it("is opening a new page with an invalid url",function(done) {
+        networkUtils.reset();
+        networkUtils.init();
+        networkUtils.traceResources = true;
+        networkUtils.webpage.open('http://:slimerjs.org', function(success){
+            networkUtils.trace += "CALLBACK:"+success+"\n";
+            expect(success).toEqual("fail");
+            done();
         });
+    });
+    async.it("should generate the expected trace for the error page", function(done){
+        var expectedTrace = ""
+        expectedTrace += "INITIALIZED -1\n";
+        expectedTrace += "LOADSTARTED:about:blank\n";
+        expectedTrace += "URLCHANGED:about:blank\n";
+        expectedTrace += "LOADFINISHED:about:blank - 1 fail\n";
+        if (URLUtils) expectedTrace += "  loaded url=http://:slimerjs.org\n";
+        expectedTrace += "CALLBACK:fail\n";
+        expect(networkUtils.trace).toEqual(expectedTrace);
+        expect(networkUtils.receivedRequest.length).toEqual(0);
+        done();
+    });
+
+    async.it("is opening a new page with an url having a unknown protocol",function(done) {
+        networkUtils.reset();
+        networkUtils.init();
+        networkUtils.traceResources = true;
+        networkUtils.webpage.open('hsttp://slimerjs.org', function(success){
+            networkUtils.trace += "CALLBACK:"+success+"\n";
+            expect(success).toEqual("fail");
+            done();
+        });
+    });
+    async.it("should generate the expected trace for the error page", function(done){
+        var expectedTrace = ""
+        expectedTrace += "INITIALIZED -1\n";
+        expectedTrace += "LOADSTARTED:about:blank\n";
+        expectedTrace += "URLCHANGED:about:blank\n";
+        expectedTrace += "RES REQUESTED hsttp://slimerjs.org\n";
+        expectedTrace += "RES ERROR 301 - hsttp://slimerjs.org\n";
+        expectedTrace += "RES RECEIVED end - hsttp://slimerjs.org\n";
+        expectedTrace += "LOADFINISHED:about:blank - 1 fail\n";
+        if (URLUtils) expectedTrace += "  loaded url=hsttp://slimerjs.org\n";
+        expectedTrace += "CALLBACK:fail\n";
+        expect(networkUtils.trace).toEqual(expectedTrace);
+        done();
+    });
+
+    async.it("should not have received error page", function(done){
+        networkUtils.searchRequest('hsttp://slimerjs.org', function(r){
+            expect(r.req).toNotBe(null);
+            expect(r.start).toBeNull();
+            expect(r.end).toNotBe(null);
+            expect(r.err).toNotBe(null);
+            expect(r.timeout).toBeNull();
+            expect(r.req.id).toEqual(r.end.id);
+            expect(r.req.id).toEqual(r.err.id);
+            expect(r.req.url).toEqual(r.end.url);
+            expect(r.req.url).toEqual(r.err.url);
+            expect(r.req.method).toEqual("get");
+            expect(r.end.status).toBeNull();
+            expect(r.end.statusText).toBeNull();
+            expect(r.end.contentType).toBeNull();
+            expect(r.err.errorCode).toEqual(301);
+            expect(r.err.status).toBeNull();
+            expect(r.err.statusText).toBeNull();
+        });
+        done();
+    });
+
+    async.it("should open direct content",function(done) {
+        networkUtils.reset();
+
+        networkUtils.init();
+        networkUtils.traceResources = true;
+        
+        var content = "<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\">\n"
+            +"        <title>content #1</title>\n"
+            +"        <script type='text/javascript' src='"+domain+"nothing.js'></script></head>\n"
+            +"    <body><div>content set with setContent <img src='"+domain+"glouton-home.png'/></div></body>";
+        var url = 'http://slimerjs.org/foo.html';
+        networkUtils.webpage.captureContent =  [ /\/javascript$/ ];
+        networkUtils.webpage.setContent(content, url);
+        done();
+    });
+
+    async.it("should generate the expected trace", function(done){
+        var expectedTrace = ""
+        expectedTrace += "LOADSTARTED:about:blank\n";
+        if (URLUtils) expectedTrace += "  loading url=http://slimerjs.org/foo.html\n";
+        expectedTrace += "URLCHANGED:http://slimerjs.org/foo.html\n";
+        expectedTrace += "RES REQUESTED http://localhost:8083/nothing.js\n";
+        expectedTrace += "INITIALIZED 0\n";
+        expectedTrace += "RES RECEIVED start - http://localhost:8083/nothing.js\n";
+        expectedTrace += "RES RECEIVED end - http://localhost:8083/nothing.js\n";
+        expectedTrace += "RES REQUESTED http://localhost:8083/glouton-home.png\n";
+        expectedTrace += "RES RECEIVED start - http://localhost:8083/glouton-home.png\n";
+        expectedTrace += "RES RECEIVED end - http://localhost:8083/glouton-home.png\n";
+        expectedTrace += "LOADFINISHED:http://slimerjs.org/foo.html - 1 success\n";
+        if (URLUtils) expectedTrace += "  loaded url=http://slimerjs.org/foo.html\n";
+        expect(networkUtils.trace).toEqual(expectedTrace);
+        done();
+    });
+
+    async.it("should not have received foo.html", function(done){
+        networkUtils.searchMissedRequest('http://slimerjs.org/foo.html');
+        done();
+    });
+
+    async.it("should have received nothing.js with body content", function(done){
+        networkUtils.searchRequest(domain + 'nothing.js', function(r){
+            expect(r.req).toNotBe(null);
+            expect(r.start).toNotBe(null);
+            expect(r.end).toNotBe(null);
+            expect(r.err).toBeNull();
+            expect(r.timeout).toBeNull();
+            expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
+            expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
+            expect(r.req.method).toEqual("GET");
+            expect(r.start.status).toEqual(200);
+            expect(r.start.statusText).toEqual('OK');
+            expect(r.end.status).toEqual(200);
+            expect(r.end.statusText).toEqual('OK');
+            expect(r.start.contentType).toEqual("text/javascript");
+            expect(r.end.contentType).toEqual("text/javascript");
+            expect(r.end.body).toEqual("function nothing() { }");
+        });
+        done();
+    });
+
+    async.it("should have received png without body content", function(done){
+        networkUtils.searchRequest(domain + 'glouton-home.png', function(r){
+            expect(r.req).toNotBe(null);
+            expect(r.start).toNotBe(null);
+            expect(r.end).toNotBe(null);
+            expect(r.err).toBeNull();
+            expect(r.timeout).toBeNull();
+            expect((r.req.id == r.start.id) && (r.req.id == r.end.id)).toBeTruthy();
+            expect((r.req.url == r.start.url) && (r.req.url == r.end.url)).toBeTruthy();
+            expect(r.req.method).toEqual("GET");
+            expect(r.start.status).toEqual(200);
+            expect(r.start.statusText).toEqual('OK');
+            expect(r.end.status).toEqual(200);
+            expect(r.end.statusText).toEqual('OK');
+            expect(r.start.contentType).toEqual("image/png");
+            expect(r.end.contentType).toEqual("image/png");
+            expect(r.end.body).toEqual("");
+        });
+        done();
+    });
+
+    async.it("should support resource timeout",function(done) {
+        networkUtils.reset();
+
+        networkUtils.init();
+        networkUtils.traceResources = true;
+        networkUtils.webpage.settings.resourceTimeout = 1000;
+        networkUtils.webpage.open(domain + 'timeouttest', function(success){
+            networkUtils.trace += "CALLBACK:"+success+"\n";
+            expect(success).toEqual("fail");
+            done();
+        });
+    });
+    
+
+    async.it("timeout should generate the expected trace", function(done){
+        var expectedTrace = ""
+        expectedTrace += "INITIALIZED -1\n";
+        expectedTrace += "LOADSTARTED:about:blank\n";
+        if (URLUtils) expectedTrace += "  loading url=http://localhost:8083/timeouttest\n";
+        expectedTrace += "RES REQUESTED http://localhost:8083/timeouttest\n";
+        //expectedTrace += "URLCHANGED:http://localhost:8083/timeouttest\n";
+        //expectedTrace += "INITIALIZED 1\n";
+        expectedTrace += "RES ERROR 5 - http://localhost:8083/timeouttest\n";
+        expectedTrace += "RES TIMEOUT 408 - http://localhost:8083/timeouttest\n";
+        expectedTrace += "RES RECEIVED end - http://localhost:8083/timeouttest\n";
+        expectedTrace += "LOADFINISHED:http://localhost:8083/timeouttest - undefined fail\n";
+        if (URLUtils) expectedTrace += "  loaded url=http://localhost:8083/timeouttest\n";
+        expectedTrace += "CALLBACK:fail\n";
+        expect(networkUtils.trace).toEqual(expectedTrace);
+        done();
+    });
+
+    async.it("should have received timeouttest in error", function(done){
+        networkUtils.searchRequest(domain + 'timeouttest', function(r){
+            expect(r.req).toNotBe(null);
+            expect(r.start).toBeNull();
+            expect(r.end).toNotBe(null);
+            expect(r.err).toNotBe(null);
+            expect(r.timeout).toNotBe(null);
+            expect(r.req.id).toEqual(r.end.id);
+            expect(r.req.url).toEqual(r.end.url);
+            expect(r.req.method).toEqual("GET");
+            expect(r.end.status).toBeNull();
+            expect(r.end.statusText).toBeNull();
+            expect(r.end.contentType).toBeNull();
+            expect(r.err.id).toEqual(r.req.id);
+            expect(r.err.url).toEqual(r.req.url);
+            expect(r.err.errorCode).toEqual(5);
+            expect(r.err.errorString).toEqual("Operation canceled");
+            expect(r.err.status).toBeNull();
+            expect(r.err.statusText).toBeNull();
+            expect(r.timeout.id).toEqual(r.req.id);
+            expect(r.timeout.url).toEqual(r.req.url);
+            expect(r.timeout.errorCode).toEqual(408);
+            expect(r.timeout.method).toEqual("GET");
+        });
+        done();
     });
 
     async.it("test end", function(done){
-        webpage.close();
+        networkUtils.traceResources = false;
+        networkUtils.reset();
         done();
     });
 });

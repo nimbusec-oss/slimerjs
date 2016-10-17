@@ -4,8 +4,7 @@ Differences with PhantomJS
 ==========================
 
 There are some differences between SlimerJS and PhantomJS 1.9.x
-although we tried to implement the same behaviors of
-PhantomJS APIs.
+although we tried to implement the same behaviors of PhantomJS APIs.
 
 PhantomsJS is built on top of Webkit and JavascriptCore (like Safari)
 and SlimerJS is built on top of Gecko and SpiderMonkey (like Firefox).
@@ -22,6 +21,7 @@ We found most of them during the port of CasperJS on SlimerJS.
 Javascript Engine
 ------------------
 
+- SlimerJS' javascript engine implements most of ES6 features
 - The property ``name`` on JS functions is read only in Gecko.
 - Error message for a ``ReferenceError`` is not strictly equal between Gecko and Webkit.
 - The name of an exception for a syntax error is ``"SyntaxError"`` in gecko, and ``"SYNTAX_ERR"``
@@ -61,6 +61,8 @@ Network
   SlimerJS (Gecko) create a request, then cancels it and create a second request, so
   your ``onResponseReceive`` is called for the two requests.. PhantomJS just reuse the
   same request.
+- If the url given to webpage.open() is malformed, PhantomJS calls the callback
+  with "success" whereas SlimerJS calls it with "fail"
 
 In the API
 -----------
@@ -98,8 +100,10 @@ In the API
 - The callback ``webpage.onNavigationRequest`` receives bad parameters.
   Don't rely on the ``navigationType`` and the ``isMainFrame`` values (because of
   some limitations in the Gecko API).
-- Callbacks ``webpage.onLoadStarted`` and ``webpage.onLoadFinished`` receive additionnal
+- Callbacks ``webpage.onLoadStarted`` and ``webpage.onLoadFinished`` receive additional
   parameters in SlimerJS (the url, a boolean indicated if it is in a frame...)
+- You can output binary content on the standard output stream (weither with
+  ``fs.open('/dev/stdout')``, ``webpage.render('/dev/stdout')`` or ``system.stdout``)
 
-
+Some few PhantomJS features are still missing in SlimerJS. See release notes.
 

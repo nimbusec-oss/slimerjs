@@ -22,6 +22,11 @@ as PhantomJS, plus some others. Indicate them before the script filename.
 However, all options are not supported yet. And some of them won't be supported because
 they don't make sens with the existing profile system.
 
+For Windows users: if an option does not work, remove the equal sign and the first
+dash. For example, ``--proxy=localhost`` becomes ``-proxy localhost``. You should
+note also that the command line parsing is done by Firefox, not by SlimerJS.
+
+
 ================================================  ===================  ====================================================
 PhantomJS options
 ================================================  ===================  ====================================================
@@ -42,7 +47,6 @@ PhantomJS options
 --proxy-type=[http|socks5|none]                   Supported (0.9)      See below other possible values
 --remote-debugger-port=number
 --remote-debugger-autorun=[yes|no|true|false]
---script-encoding=encoding
 --ssl-protocol=[ssl protocol name]                Supported (0.9.5)    Indicates the SSL protocol to use. See notes about it below. Default is TLS.
 --ssl-certificates-path=/path/to/dir              N/A. see profiles
 --version or -v                                   Supported            Displays the version of SlimerJS
@@ -76,8 +80,6 @@ With the ``--debug`` option, SlimerJS displays many messages about what happened
 the execution of your script: network events, page loading, ``sendEvent`` calls, configuration
 values, command line parameters..
 
-In future version, it will display file opening, cookies...
-
 SlimerJS accepts a value other than true/false/yes/no for --debug. You can indicate what to display.
 
 Example: ``--debug=pageloading,netprogress``.
@@ -86,7 +88,7 @@ Available keywords are:
 
 - ``page``: show calls of some webpage API
 - ``pageloading``: show calls of webpage listeners about resource loading and page loading
-- ``netprogress``: show internals network events
+- ``netprogress`` or ``net`` or ``network``: show internals network events
 - ``config``: show configuration values
 - ``cli``: show command line parameters for the script
 - ``errors``: show gecko errors (javascript errors ...). only for Firefox 25+
@@ -101,7 +103,9 @@ port should be indicated with the ``--proxy=`` option: ``--proxy=host:port``
 SlimerJS supports also some specific values for ``--proxy-type``:
 
 - ``auto``: SlimerJS tries to detect automatically proxies
-- ``system``: SlimerJS uses the proxy configuration set into the operating system
+- ``system``: SlimerJS uses the proxy configuration set into the operating
+  system. Under linux, Firefox is using proxy configuration stored into Gnome
+  settings or GConf. Note that the use of the ``http_proxy`` environment variable does not work.
 - ``config-url``: SlimerJS uses the proxy configuration set into a file. The HTTP or file:// URL
    of this file should be indicated with the ``--proxy=`` option.
 
@@ -148,6 +152,7 @@ Values of some options are available through the ``phantom`` object and the ``we
 .. code-block:: javascript
 
         {
+            allowMedia: true,                       // value of --allow-media
             javascriptEnabled: true,
             loadImages: true,                       // value of --load-images
             localToRemoteUrlAccessEnabled: false,   // value of --local-to-remote-url-access

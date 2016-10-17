@@ -46,7 +46,9 @@ function TextReader(inputStream, charset) {
               Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
 
   let manager = new StreamManager(this, stream);
+  let readHasStarted = false;
 
+  let eof = false;
   /**
    * Reads a string from the stream.  If the stream is closed, an exception is
    * thrown.
@@ -85,11 +87,56 @@ function TextReader(inputStream, charset) {
       // number of characters encoded by the bytes in that buffer.
       chunkRead = stream.readString(toRead, chunk);
       str += chunk.value;
+      if (chunkRead == 0) {
+        eof = true;
+      }
       totalRead += chunkRead;
     }
-
+    readHasStarted = true;
     return str;
   };
+
+  this.readLine = function TextReader_readLine() {
+    manager.ensureOpened();
+    let str = "";
+    let foundLineFeed= false;
+    let chunkRead = 1;
+    while (!foundLineFeed && chunkRead) {
+      let chunk = {};
+      chunkRead = stream.readString(1, chunk);
+      if (chunkRead == 0) {
+        eof = true;
+      }
+      else if (chunk.value != "\n"){
+        str += chunk.value;
+      }
+      else {
+        foundLineFeed = true;
+      }
+    }
+    readHasStarted = true;
+    return str;
+  }
+
+  this.atEnd = function() {
+    return eof;
+  }
+
+  this.getEncoding = function() {
+    return charset;
+  }
+
+  this.setEncoding = function(encoding) {
+    if (!readHasStarted) {
+        // we can change the encoding only if we didn't read yet the stream
+        charset = encoding;
+        stream = Cc["@mozilla.org/intl/converter-input-stream;1"].
+                   createInstance(Ci.nsIConverterInputStream);
+        stream.init(inputStream, encoding, BUFFER_BYTE_LEN,
+              Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
+
+    }
+  }
 }
 
 /**
@@ -104,7 +151,7 @@ function TextReader(inputStream, charset) {
  *        If not given, "UTF-8" is assumed.  See nsICharsetConverterManager.idl
  *        for documentation on how to determine other valid values for this.
  */
-function TextWriter(outputStream, charset) {
+function TextWriter(outputStream, charset, nobuffer) {
   const self = this;
   charset = checkCharset(charset);
 
@@ -153,8 +200,14 @@ function TextWriter(outputStream, charset) {
       len = istream.available();
     }
     istream.close();
+    if (nobuffer) {
+        stream.flush();
+    }
   };
 
+  this.writeLine = function TextWriter_write(str) {
+    this.write(str+"\n");
+  }
   /**
    * Writes a string on a background thread.  After the write completes, the
    * backing stream's buffer is flushed, and both the stream and the backing
@@ -190,6 +243,14 @@ function TextWriter(outputStream, charset) {
       }
     });
   };
+
+  this.getEncoding = function() {
+    return charset;
+  }
+
+  this.setEncoding = function(encoding) {
+    uconv.charset = charset = encoding;
+  }
 }
 
 // This manages the lifetime of stream, a TextReader or TextWriter.  It defines
@@ -240,5 +301,5 @@ StreamManager.prototype = {
 };
 
 function checkCharset(charset) {
-  return typeof(charset) === "string" ? charset : DEFAULT_CHARSET;
+  return typeof(charset) === "string" && charset != '' ? charset : DEFAULT_CHARSET;
 }

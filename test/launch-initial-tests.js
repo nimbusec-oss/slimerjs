@@ -43,15 +43,15 @@ assertExists(phantom, "has phantom object? ");
 if ("slimer" in this) {
     assertExists(slimer, "has slimer object? ");
     assertExists(slimer.version, "has slimer.version object? ");
-    assertEquals("0", slimer.version.major, "slimer has the good major version");
-    assertEquals("10", slimer.version.minor, "slimer has the good minor version");
+    assertEquals("1", slimer.version.major, "slimer has the good major version");
+    assertEquals("0", slimer.version.minor, "slimer has the good minor version");
     assertEquals("0", slimer.version.patch, "slimer has the good patch version");
 }
 else
     console.warn("==> No slimer object!")
 assertEquals("1", phantom.version.major, "phantom has the good major version");
 assertEquals("9", phantom.version.minor, "phantom has the good minor version");
-assertEquals("2", phantom.version.patch, "phantom has the good patch version");
+assertEquals("8", phantom.version.patch, "phantom has the good patch version");
 
 assertEquals(true, "require" in this, "there is a require object");
 assertEquals("function", typeof require, "require is a function");
@@ -88,6 +88,11 @@ var fs = require("fs");
 
 var system = require("system");
 
+console.log("\n------ you should see the output of system.stdout\noutput:")
+
+system.stdout.write("Hello");
+system.stdout.write(" World - character with accent: ąćęłńśóźż");
+system.stderr.write(" message from system.stderr");
 console.log("\n------ check yourself if following values are ok")
 
 console.log("os.architecture="+system.os.architecture);
@@ -177,7 +182,7 @@ phantom.onError = function(msg, stack) {
     assertEquals(9, stack[1].line, "line in requiredexample.js")
     assertEquals("exports.throwExcept", stack[1].function, "function in stack")
     assertNotEquals(-1, stack[2].sourceURL.indexOf('initial-tests.js'), "filename is initial-tests.js")
-    assertEquals(184, stack[2].line, "line in initial-tests.js")
+    assertEquals(189, stack[2].line, "line in initial-tests.js")
     assertEquals("", stack[2].function, "function in stack")
 }
 

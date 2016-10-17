@@ -16,7 +16,7 @@ is :doc:`a Cookie object <cookie>`. The cookie can be for any domains.
 It returns true if the cookie has been really added. If cookies are
 disabled, the cookie is not added into the cookie database.
 
-Be careful about `the inconsistent behavior of the expiry property <cookies.html#expires>`_.
+Be careful about `the inconsistent behavior of the expiry property <cookie.html#expires>`_.
 
 
 .. _phantom-args:
@@ -30,7 +30,10 @@ This is an array containing all arguments given on the command line.
 
     var firstarg = phantom.args[0];
 
+.. container:: warning
 
+    This property is deprecated and will be removed in futur version.
+    Use system.args instead.
 
 .. _phantom-clearCookies:
 
@@ -54,7 +57,7 @@ Probably you would prefer to use the ``addCookie()`` method to modify a cookie.
 If cookies are disabled, modifying this property does nothing.
 
 
-Be careful about `the inconsistent behavior of the expiry property <cookies.html#expires>`_.
+Be careful about `the inconsistent behavior of the expiry property <cookie.html#expires>`_.
 
 .. _phantom-cookiesEnabled:
 
@@ -84,6 +87,7 @@ This is an object that contains this following properties:
 .. code-block:: javascript
 
         {
+            allowMedia: true,                       // value of --allow-media
             javascriptEnabled: true,
             loadImages: true,                       // value of --load-images
             localToRemoteUrlAccessEnabled: false,   // value of --local-to-remote-url-access
@@ -126,6 +130,13 @@ It accepts an optional exit code. Default is 0.
 
 Note: your script may continue to be executed after the call of this method, because of
 the asynchronous behavior of this function.
+
+.. _phantom-fullyDecodeUrl:
+
+fullyDecodeUrl(url)
+------------------------------------
+
+Decode a URL to human-readable form.
 
 .. _phantom-injectJs:
 
@@ -178,6 +189,30 @@ a message and a stack as parameters.
     }
 
 
+.. _phantom-outputEncoding:
+
+outputEncoding
+-----------------------------------------
+
+get or set the encoding for the output (system.stdout, system.stderr, console.log).
+Not supported on Windows.
+
+Special value "binary" allows to output binary content on the standard output
+with system.stdout.
+
+.. _phantom-resolveRelativeUrl:
+
+proxy()
+-----------------------------------------
+
+Returns proxy host / IP address and port separated by ":".
+It may return proxy auto-config URL (PAC) if set. (SlimerJS only).
+
+resolveRelativeUrl(url, base)
+------------------------------------------
+
+Resolve a URL relative to a base.
+
 .. _phantom-scriptName:
 
 scriptName
@@ -185,7 +220,39 @@ scriptName
 
 Contains the script name given to the command line.
 
+
+.. container:: warning
+
+    This property is deprecated and will be removed in futur version.
+    Use ``system.args[0]`` instead.
+
 .. _phantom-version:
+
+setProxy(host, port, proxyType, user, password)
+-----------------------------------------
+
+Use it if you want to change proxy configuration at runtime.
+The first parameter may be a:
+- hostname
+- IP address
+- auto-config URL (PAC; SlimerJS only)
+
+Any value which evaluates to false (null, undefined, false etc.) will disable the proxy.
+
+Proxy types:
+- "system": Use system proxy settings
+- "auto": Auto-detect proxy settings
+- "config-url": Automatic proxy configuration URL
+- "socks"
+- "socks5"
+- "http" / null / undefined
+
+Any other value will disable the proxy.
+
+More info:
+https://developer.mozilla.org/en-US/docs/Mozilla/Preferences/Mozilla_networking_preferences
+http://kb.mozillazine.org/Network.proxy.type
+
 
 version
 -----------------------------------------
@@ -198,9 +265,4 @@ containing three properties, ``major``, ``minor``, ``patch``:
 
     var v = phantom.version;
     console.log('version: ' + v.major + '.' + v.minor + '.' + v.patch);
-
-
-
-
-
 

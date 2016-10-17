@@ -294,6 +294,8 @@ setEncoding(encoding)
 
 Allows to indicate the encoding of the response content (``UTF-8`` etc).
 
+The special value "binary" allows output of binary data without corruption,
+e.g. from a binary array.
 
 .. _response-writeHead:
 
@@ -321,5 +323,4 @@ close()
 
 Indicate that the response is complete, and the connection with the browser is closed. It
 is not possible to send other data (header or content) after this method.
-
 

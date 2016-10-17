@@ -45,7 +45,7 @@ describe("phantom object", function() {
     it("should have a right version", function(){
         expect(phantom.version.major).toEqual(1);
         expect(phantom.version.minor).toEqual(9);
-        expect(phantom.version.patch).toEqual(2);
+        expect(phantom.version.patch).toEqual(8);
     });
 
     it("should contain the script name", function(){
@@ -53,6 +53,7 @@ describe("phantom object", function() {
     });
 
     it("should have a defaultPageSettings property", function() {
+        expect(phantom.defaultPageSettings.allowMedia).toBeTruthy();
         expect(phantom.defaultPageSettings.javascriptEnabled).toBeTruthy();
         expect(phantom.defaultPageSettings.loadImages).toBeTruthy();
         expect(phantom.defaultPageSettings.localToRemoteUrlAccessEnabled).toBeFalsy();
@@ -78,6 +79,18 @@ describe("phantom object", function() {
         phantom.defaultPageSettings.userName = 'laurent';
         expect(phantom.defaultPageSettings.userName).toEqual(undefined);
     });
+
+    it("resolveRelativeUrl", function() {
+        expect(phantom.resolveRelativeUrl(
+                            "../scripts/foo.js",
+                            "http://example.com/topic/page.html"))
+            .toEqual("http://example.com/scripts/foo.js");
+    });
+
+    it("fullyDecodeUrl", function() {
+        expect(phantom.fullyDecodeUrl("https://ja.wikipedia.org/wiki/%E8%87%A8%E6%B5%B7%E5%AD%A6%E6%A0%A1"))
+            .toEqual("https://ja.wikipedia.org/wiki/臨海学校");
+    });
 });
 
 if ("slimer" in this) {
@@ -88,8 +101,8 @@ if ("slimer" in this) {
         });
 
         it("should have a right version", function(){
-            expect(slimer.version.major).toEqual(0);
-            expect(slimer.version.minor).toEqual(10);
+            expect(slimer.version.major).toEqual(1);
+            expect(slimer.version.minor).toEqual(0);
             expect(slimer.version.patch).toEqual(0);
         });
 
