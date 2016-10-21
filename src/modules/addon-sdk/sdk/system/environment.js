@@ -13,7 +13,7 @@ const { Cc, Ci } = require('chrome');
 const { get, set, exists } = Cc['@mozilla.org/process/environment;1'].
                              getService(Ci.nsIEnvironment);
 
-exports.env = Proxy.create({
+exports.env = new Proxy({}, {
   // XPCOM does not provides a way to enumerate environment variables, so we
   // just don't support enumeration.
   getPropertyNames: function() [],
